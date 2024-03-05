@@ -2,6 +2,7 @@
 
 // stl includes
 #include <iostream>
+#include <vector>
 // #include <cmath>
 // #include <Windows.h>
 // #include <cstdlib>
@@ -12,22 +13,34 @@
 // render includes
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 
 // imgui
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
+#include "shader.h"
+
 class Application
 {
 	public:
 	// settings
-	const unsigned int SCR_WIDTH = 1280;
-	const unsigned int SCR_HEIGHT = 720;
+	int m_SCR_WIDTH = 1280;
+	int m_SCR_HEIGHT = 720;
 
-	ImGuiIO* ioptr{};
+	ImGuiIO* m_ioptr{};
 
-	GLFWwindow* window{};
+	GLFWwindow* m_window{};
+
+	Shader m_shader{};
+
+	std::vector<float> m_vertices;
+	int m_vertexCount{};
+
+	unsigned int m_VAO;
+	unsigned int m_VBO;
+	unsigned int m_EBO;
 
 	void draw();
 
@@ -40,7 +53,7 @@ class Application
 
 	void init();
 
-	void process_framebuffer_size(GLFWwindow*, int, int);
+	void process_framebuffer_size(int, int);
 
 	void process_key(int, int, int, int);
 
