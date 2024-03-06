@@ -2,7 +2,9 @@
 
 Object::Object()
 {
-	std::ifstream file{"data/castle.obj"};
+	std::srand(std::time(nullptr));
+
+	std::ifstream file{"data/cube.obj"};
 
 	if (!file)
 	{
@@ -48,14 +50,20 @@ Object::Object()
 			while (face_vertices.size() > 2)
 			{
 				full_vertex_data.push_back(vertex_data[face_vertices[0]-1]);
+				full_vertex_data.push_back(random_color());
+				// full_vertex_data.push_back(glm::vec3{1.0f});
 				full_vertex_data.push_back(vertex_data[face_vertices.end()[-2]-1]);
+				// full_vertex_data.push_back(glm::vec3{1.0f});
+				full_vertex_data.push_back(random_color());
 				full_vertex_data.push_back(vertex_data[face_vertices.end()[-1]-1]);
+				// full_vertex_data.push_back(glm::vec3{1.0f});
+				full_vertex_data.push_back(random_color());
 				face_vertices.pop_back();
+				vertex_count += 3;
 			}
 		}
 	}
 
-	vertex_count = vertex_data.size();
 
 	// for (auto& v : vertex_data)
 	// {
@@ -65,8 +73,13 @@ Object::Object()
 	// {
 	// 	std::cout << v.x << ' ' << v.y << ' ' << v.z << '\n';
 	// }
-	// for (auto& v : full_vertex_data)
-	// {
-	// 	std::cout << v.x << ' ' << v.y << ' ' << v.z << '\n';
-	// }
+	for (auto& v : full_vertex_data)
+	{
+		std::cout << v.x << ' ' << v.y << ' ' << v.z << '\n';
+	}
+}
+
+glm::vec3 Object::random_color()
+{
+	return glm::vec3{static_cast<float>(std::rand())/RAND_MAX, static_cast<float>(std::rand())/RAND_MAX, static_cast<float>(std::rand())/RAND_MAX};
 }

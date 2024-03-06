@@ -7,9 +7,13 @@
 #include <vector>
 #include <sstream>
 #include <glm/glm.hpp>
+#include <random>
+#include <ctime>
 
 class Object
 {
+	glm::vec3 random_color();
+
 public:
 	Object();
 

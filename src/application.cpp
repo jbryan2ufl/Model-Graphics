@@ -15,7 +15,7 @@ void Application::draw()
 
 		// modelTransformation=modelTransformationComponents[0].transform;
 		m_shader.setMat4("modelTransformation", modelTransformation);
-		glDrawArrays(GL_TRIANGLES, 0, obj.full_vertex_data.size());
+		glDrawArrays(GL_TRIANGLES, 0, obj.vertex_count);
 
 
 		ImGui_ImplOpenGL3_NewFrame();
@@ -27,17 +27,6 @@ void Application::draw()
 		ImGui::SetNextWindowSize(ImVec2{m_SCR_WIDTH*1/4,m_SCR_HEIGHT});
 		if (ImGui::Begin("Settings", 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration))
 		{
-			// if (ImGui::Button("Add Transformation"))
-			// {
-			// 	modelTransformationComponents.push_back(Transformation{"t"+std::to_string(modelTransformationComponents.size()), glm::scale(glm::mat4{1.0f}, glm::vec3{0.5f})});
-			// }
-
-			// ImGui::SameLine();
-			// if (ImGui::Button("Remove Transformation"))
-			// {
-			// 	modelTransformationComponents.pop_back();
-			// }
-
 			for (auto& transformation : modelTransformationComponents)
 			{
 				// if (ImGui::CollapsingHeader())
@@ -103,6 +92,8 @@ void Application::init()
 	// glfw mouse capture
 	glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
+	glEnable(GL_DEPTH_TEST);
+
 
 	// imgui configuration
 	IMGUI_CHECKVERSION();
@@ -130,10 +121,12 @@ void Application::init()
 	std::cout << obj.vertex_count << '\n';
 
 	glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-	glBufferData(GL_ARRAY_BUFFER, obj.full_vertex_data.size()*sizeof(glm::vec3), obj.full_vertex_data.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, obj.full_vertex_data.size()*sizeof(glm::vec3)*2, obj.full_vertex_data.data(), GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 2*sizeof(glm::vec3), (void*)0);
 	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 2*sizeof(glm::vec3), (void*)sizeof(glm::vec3));
+	glEnableVertexAttribArray(1);
 
 	glfwSetWindowUserPointer(m_window, this);
 
@@ -165,36 +158,32 @@ void Application::process_mouse_button(int button, int action, int mods)
 {
 	if (!m_ioptr->WantCaptureMouse)
 	{
-		if (button == GLFW_MOUSE_BUTTON_LEFT)
-		{
-			firstMouse=true;
-		}
 	}
 }
 
 void Application::process_cursor_position(double xposIn, double yposIn)
 {
-	// if (!m_ioptr->WantCaptureMouse)
-	// {
-	// 	float xpos=static_cast<float>(xposIn);
-	// 	float ypos=static_cast<float>(yposIn);
+	if (!m_ioptr->WantCaptureMouse)
+	{
+		float xpos=static_cast<float>(xposIn);
+		float ypos=static_cast<float>(yposIn);
 
-	// 	if (firstMouse)
-	// 	{
-	// 		lastX=xpos;
-	// 		lastY=ypos;
-	// 		firstMouse=false;
-	// 	}
+		if (firstMouse)
+		{
+			lastX=xpos;
+			lastY=ypos;
+			firstMouse=false;
+		}
 
-	// 	float xoffset = xpos-lastX;
-	// 	float yoffset = ypos-lastY;
+		float xoffset = xpos-lastX;
+		float yoffset = ypos-lastY;
 
-	// 	lastX=xpos;
-	// 	lastY=ypos;
+		lastX=xpos;
+		lastY=ypos;
 
-	// 	rotate=glm::rotate(rotate,xoffset*0.01f,glm::vec3{0.0f, 1.0f, 0.0f});
-	// 	rotate=glm::rotate(rotate,yoffset*0.01f,glm::vec3{1.0f, 0.0f, 0.0f});
-	// }
+		rotate=glm::rotate(rotate,-xoffset*0.01f,glm::vec3{glm::row(rotate, 1)});
+		rotate=glm::rotate(rotate,-yoffset*0.01f,glm::vec3{glm::row(rotate, 0)});
+	}
 }
 
 void Application::process_scroll(double xoffset, double yoffset)
@@ -225,27 +214,33 @@ void Application::process_input()
 
 	if (glfwGetKey(m_window, GLFW_KEY_Q) == GLFW_PRESS)
 	{
-		rotate = glm::rotate(rotate, 0.01f, glm::vec3{0.0f, 0.0f, 1.0f});
+		// rotate = glm::rotate(rotate, 0.01f, glm::vec3{0.0f, 0.0f, 1.0f});
+		rotate = glm::rotate(rotate, 0.01f, glm::vec3{glm::row(rotate, 2)});
 	}
 	if (glfwGetKey(m_window, GLFW_KEY_E) == GLFW_PRESS)
 	{
-		rotate = glm::rotate(rotate, -0.01f, glm::vec3{0.0f, 0.0f, 1.0f});
+		// rotate = glm::rotate(rotate, -0.01f, glm::vec3{0.0f, 0.0f, 1.0f});
+		rotate = glm::rotate(rotate, -0.01f, glm::vec3{glm::row(rotate, 2)});
 	}
 	if (glfwGetKey(m_window, GLFW_KEY_W) == GLFW_PRESS)
 	{
-		rotate = glm::rotate(rotate, 0.01f, glm::vec3{1.0f, 0.0f, 0.0f});
+		rotate = glm::rotate(rotate, 0.01f, glm::vec3{glm::row(rotate, 0)});
+		// rotate = glm::rotate(rotate, 0.01f, glm::vec3{1.0f, 0.0f, 0.0f});
 	}
 	if (glfwGetKey(m_window, GLFW_KEY_S) == GLFW_PRESS)
 	{
-		rotate = glm::rotate(rotate, -0.01f, glm::vec3{1.0f, 0.0f, 0.0f});
+		rotate = glm::rotate(rotate, -0.01f, glm::vec3{glm::row(rotate, 0)});
+		// rotate = glm::rotate(rotate, -0.01f, glm::vec3{1.0f, 0.0f, 0.0f});
 	}
 	if (glfwGetKey(m_window, GLFW_KEY_A) == GLFW_PRESS)
 	{
-		rotate = glm::rotate(rotate, -0.01f, glm::vec3{0.0f, 1.0f, 0.0f});
+		rotate = glm::rotate(rotate, 0.01f, glm::vec3{glm::row(rotate, 1)});
+		// rotate = glm::rotate(rotate, -0.01f, glm::vec3{0.0f, 1.0f, 0.0f});
 	}
 	if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS)
 	{
-		rotate = glm::rotate(rotate, 0.01f, glm::vec3{0.0f, 1.0f, 0.0f});
+		rotate = glm::rotate(rotate, -0.01f, glm::vec3{glm::row(rotate, 1)});
+		// rotate = glm::rotate(rotate, 0.01f, glm::vec3{0.0f, 1.0f, 0.0f});
 	}
 
 	if (glfwGetMouseButton(m_window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
