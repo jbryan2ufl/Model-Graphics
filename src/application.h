@@ -20,12 +20,18 @@
 #include "shader.h"
 #include "object.h"
 
+struct Transformation
+{
+	std::string name{};
+	glm::mat4 t{};
+};
+
 class Application
 {
 public:
 	// settings
-	int m_SCR_WIDTH = 1280;
-	int m_SCR_HEIGHT = 720;
+	int m_SCR_WIDTH = 1920;
+	int m_SCR_HEIGHT = 1080;
 	int m_VIEW_WIDTH = 1280*3/4;
 	int m_VIEW_HEIGHT = 1280;
 
@@ -37,12 +43,13 @@ public:
 
 	glm::mat4 modelTransformation{1.0f};
 
-	glm::mat4 scale{1.0f};
-	glm::mat4 rotate{1.0f};
-	glm::mat4 translate{1.0f};
-	std::vector<glm::mat4*> modelTransformationComponents{};
+	Transformation scale{"Scale", glm::mat4{1.0f}};
+	Transformation rotate{"Rotate", glm::mat4{1.0f}};
+	Transformation translate{"Translate", glm::mat4{1.0f}};
+	std::vector<Transformation*> modelTransformationComponents{};
 
 	unsigned int m_VAO;
+	unsigned int m_ColorVBO;
 	unsigned int m_VBO;
 	unsigned int m_EBO;
 
@@ -50,7 +57,7 @@ public:
 	float lastX{};
 	float lastY{};
 
-	Object obj{};
+	Object* obj;
 
 	void draw();
 
