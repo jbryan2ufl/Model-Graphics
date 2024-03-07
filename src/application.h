@@ -12,6 +12,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_access.hpp>
 
+#include <filesystem>
+
 // imgui
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -30,10 +32,13 @@ class Application
 {
 public:
 	// settings
+
+	const float m_viewport_ratio{7.0f/9};
+
 	int m_SCR_WIDTH = 1920;
 	int m_SCR_HEIGHT = 1080;
-	int m_VIEW_WIDTH = 1280*3/4;
-	int m_VIEW_HEIGHT = 1280;
+	int m_VIEW_WIDTH = m_SCR_WIDTH*m_viewport_ratio;
+	int m_VIEW_HEIGHT = m_SCR_HEIGHT;
 
 	ImGuiIO* m_ioptr{};
 
@@ -48,6 +53,8 @@ public:
 	Transformation translate{"Translate", glm::mat4{1.0f}};
 	std::vector<Transformation*> modelTransformationComponents{};
 
+	std::vector<std::string> obj_names{};
+
 	unsigned int m_VAO;
 	unsigned int m_ColorVBO;
 	unsigned int m_VBO;
@@ -56,6 +63,8 @@ public:
 	bool firstMouse{};
 	float lastX{};
 	float lastY{};
+
+	bool useEBO{false};
 
 	Object* obj;
 
@@ -79,10 +88,11 @@ public:
 
 	void process_scroll(double, double);
 
-
 	void run();
 
 	void close();
+
+	void reload_data();
 };
 
 static void framebuffer_size_callback(GLFWwindow*, int, int);

@@ -1,10 +1,18 @@
 #include "object.h"
 
-Object::Object()
+void Object::load_file(std::string fn)
 {
-	std::srand(std::time(nullptr));
+	filename=fn;
+	vertex_data.clear();
+	color_data.clear();
+	normal_data.clear();
+	full_vertex_data.clear();
+	full_color_data.clear();
+	index_data.clear();
+	full_index_data.clear();
+	normal_index_data.clear();
 
-	std::ifstream file{"data/flowers.obj"};
+	std::ifstream file{"data/"+filename};
 
 	if (!file)
 	{
@@ -29,19 +37,15 @@ Object::Object()
 			vertex_data.push_back(vertex);
 		}
 		
-		if (!normal_off)
+		if (term == "vn")
 		{
-			if (term == "vn")
+			glm::vec3 vertex{};
+			for (int i{}; i < 3; i++)
 			{
-				glm::vec3 vertex{};
-				for (int i{}; i < 3; i++)
-				{
-					ss >> term;
-					vertex[i]=std::stof(term);
-				}
-				normal_data.push_back(vertex);
-				color_data.push_back(normal_to_color(vertex));
+				ss >> term;
+				vertex[i]=std::stof(term);
 			}
+			normal_data.push_back(vertex);
 		}
 
 		if (term == "f")
@@ -52,7 +56,6 @@ Object::Object()
 			while(ss >> term)
 			{
 				temp=std::stoi(term.substr(0,term.find('/')))-1;
-				// std::cout << term.substr(term.rfind('/')+1, -1);
 				face_vertices.push_back(temp);
 				index_data.push_back(temp);
 				normal_index_data.push_back(std::stoi(term.substr(term.rfind('/')+1, -1))-1);
@@ -60,22 +63,16 @@ Object::Object()
 			while (face_vertices.size() > 2)
 			{
 				full_vertex_data.push_back(vertex_data[face_vertices[0]]);
-				// full_vertex_data.push_back(random_color());
 
 				full_vertex_data.push_back(vertex_data[face_vertices.end()[-2]]);
-				// full_vertex_data.push_back(random_color());
 
 				full_vertex_data.push_back(vertex_data[face_vertices.end()[-1]]);
-				// full_vertex_data.push_back(random_color());
 
 				face_vertices.pop_back();
 				vertex_count += 3;
 			}
 			while (index_data.size() > 2)
 			{
-				// color_data.push_back(random_color());
-				// color_data.push_back(random_color());
-				// color_data.push_back(random_color());
 				if (normal_data.size() != 0)
 				{
 					full_color_data.push_back(normal_to_color(normal_data[normal_index_data[0]]));
@@ -87,6 +84,7 @@ Object::Object()
 					full_color_data.push_back(normal_to_color(glm::normalize(vertex_data[index_data[0]])));
 					full_color_data.push_back(normal_to_color(glm::normalize(vertex_data[index_data.end()[-2]])));
 					full_color_data.push_back(normal_to_color(glm::normalize(vertex_data[index_data.end()[-1]])));
+
 					// full_color_data.push_back(random_color());
 					// full_color_data.push_back(random_color());
 					// full_color_data.push_back(random_color());
@@ -104,14 +102,17 @@ Object::Object()
 		}
 	}
 
-	if (normal_data.size() == 0)
+	for (int i{}; i < vertex_data.size(); i++)
 	{
-		for (int i{}; i < vertex_data.size(); i++)
-		{
-			// color_data.push_back(random_color());
-			color_data.push_back(normal_to_color(glm::normalize(vertex_data[i])));
-		}
+		color_data.push_back(normal_to_color(glm::normalize(vertex_data[i])));
 	}
+}
+
+Object::Object()
+{
+	std::srand(std::time(nullptr));
+
+	load_file("cow.obj");
 }
 
 glm::vec3 Object::normal_to_color(glm::vec3 normal)
@@ -127,9 +128,4 @@ glm::vec3 Object::random_color()
 void Object::print_vec(glm::vec3 vec)
 {
 	std::cout << vec.x << ' ' << vec.y << ' ' << vec.z << '\n';
-}
-
-glm::vec3 Object::pos_to_color(glm::vec3 pos)
-{
-	return pos/10.0f;
 }

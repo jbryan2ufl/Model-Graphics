@@ -1,8 +1,38 @@
 #pragma once
 
-#define EBO
-
 #include "application.h"
+
+void Application::reload_data()
+{
+	glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
+	if (useEBO)
+	{
+		glBufferData(GL_ARRAY_BUFFER, obj->vertex_data.size()*sizeof(glm::vec3), obj->vertex_data.data(), GL_STATIC_DRAW);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+		glEnableVertexAttribArray(0);
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_ColorVBO);
+		glBufferData(GL_ARRAY_BUFFER, obj->color_data.size()*sizeof(glm::vec3), obj->color_data.data(), GL_STATIC_DRAW);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+		glEnableVertexAttribArray(1);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, obj->full_index_data.size()*sizeof(unsigned int), obj->full_index_data.data(), GL_STATIC_DRAW);
+	}
+	else
+	{
+		glBufferData(GL_ARRAY_BUFFER, obj->full_vertex_data.size()*sizeof(glm::vec3), obj->full_vertex_data.data(), GL_STATIC_DRAW);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+		glEnableVertexAttribArray(0);
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_ColorVBO);
+		glBufferData(GL_ARRAY_BUFFER, obj->full_color_data.size()*sizeof(glm::vec3), obj->full_color_data.data(), GL_STATIC_DRAW);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+		glEnableVertexAttribArray(1);
+	}
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
+
+}
 
 void Application::draw()
 {
@@ -15,24 +45,30 @@ void Application::draw()
 			modelTransformation*=transformation->t;
 		}
 
-		// modelTransformation=modelTransformationComponents[0].transform;
 		m_shader.setMat4("modelTransformation", modelTransformation);
-		#ifdef EBO
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
+		if (useEBO)
+		{
 			glDrawElements(GL_TRIANGLES, obj->full_index_data.size()*sizeof(unsigned int), GL_UNSIGNED_INT, 0);
-		#else
+		}
+		else
+		{
 			glDrawArrays(GL_TRIANGLES, 0, obj->full_vertex_data.size()*sizeof(glm::vec3));
-		#endif
+		}
 
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 		ImGui::SetNextWindowBgAlpha(1.0f);
 		glfwGetWindowSize(m_window, &m_SCR_WIDTH, &m_SCR_HEIGHT);
-		ImGui::SetNextWindowPos(ImVec2{m_SCR_WIDTH*3/4,0});
-		ImGui::SetNextWindowSize(ImVec2{m_SCR_WIDTH*1/4,m_SCR_HEIGHT});
+		ImGui::SetNextWindowPos(ImVec2{m_SCR_WIDTH*m_viewport_ratio,0});
+		ImGui::SetNextWindowSize(ImVec2{m_SCR_WIDTH*(1-m_viewport_ratio),m_SCR_HEIGHT});
 		if (ImGui::Begin("Settings", 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration))
 		{
+			if (ImGui::Checkbox("EBO", &useEBO))
+			{
+				reload_data();
+			}
+
 			for (auto& transformation : modelTransformationComponents)
 			{
 				ImGui::Text(transformation->name.c_str());
@@ -45,15 +81,28 @@ void Application::draw()
 						{
 							ImGui::TableSetColumnIndex(j);
 							ImGui::Text(std::to_string(transformation->t[j][i]).c_str());
-							// ImGui::SliderFloat(("##float"+std::to_string(i)+std::to_string(j)).c_str(), &transformation.transform[i][j], 0.0f, 1.0f);
 						}
 					}
 					ImGui::EndTable();
 				}
 				ImGui::NewLine();
 			}
+			static unsigned int selected{3};
+			for (int i{}; i<obj_names.size(); i++)
+			{
+				if (ImGui::Selectable(obj_names[i].c_str(), selected==i))
+				{
+					if (obj_names[i].c_str() != obj->filename)
+					{
+						obj->load_file(obj_names[i].c_str());
+						reload_data();
+					}
+					selected=i;
+				}
+			}
 		}
 		ImGui::End();
+		// ImGui::ShowDemoWindow();
 		ImGui::Render();
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -66,6 +115,16 @@ Application::Application()
 
 void Application::init()
 {
+	std::string path("data/");
+	std::string extension(".obj");
+	for (auto& file : std::filesystem::directory_iterator(path))
+	{
+		if (file.path().extension() == extension)
+		{
+			obj_names.push_back(file.path().filename().string());
+		}
+	}
+
 	// glfw initialize and configure
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -103,8 +162,6 @@ void Application::init()
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 	m_ioptr=&io;
 	ImGui::StyleColorsDark();
 	ImGui_ImplGlfw_InitForOpenGL(m_window, true);
@@ -125,44 +182,12 @@ void Application::init()
 	glBindVertexArray(m_VAO);
 
 	obj = new Object();
-	// std::cout << obj->vertex_count << '\n';
-	// std::cout << obj->full_vertex_data.size()*sizeof(glm::vec3)*2 << '\n';
-	// std::cout << sizeof(obj->full_vertex_data)*obj->full_vertex_data.size() << '\n';
 
-	#ifdef EBO
-	glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-	glBufferData(GL_ARRAY_BUFFER, obj->vertex_data.size()*sizeof(glm::vec3), obj->vertex_data.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, m_ColorVBO);
-	glBufferData(GL_ARRAY_BUFFER, obj->color_data.size()*sizeof(glm::vec3), obj->color_data.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
-	glEnableVertexAttribArray(1);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, obj->full_index_data.size()*sizeof(unsigned int), obj->full_index_data.data(), GL_STATIC_DRAW);
-
-	#else
-	glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-	glBufferData(GL_ARRAY_BUFFER, obj->full_vertex_data.size()*sizeof(glm::vec3), obj->full_vertex_data.data(), GL_STATIC_DRAW);
-	// glBufferData(GL_ARRAY_BUFFER, obj->full_vertex_data.size()*sizeof(glm::vec3)*2, obj->full_vertex_data.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, m_ColorVBO);
-	glBufferData(GL_ARRAY_BUFFER, obj->full_color_data.size()*sizeof(glm::vec3), obj->full_color_data.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
-	glEnableVertexAttribArray(1);
-	// glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 2*sizeof(glm::vec3), (void*)0);
-	// glEnableVertexAttribArray(0);
-	// glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 2*sizeof(glm::vec3), (void*)sizeof(glm::vec3));
-	// glEnableVertexAttribArray(1);
-	#endif
+	reload_data();
 
 	glfwSetWindowUserPointer(m_window, this);
 
-	glViewport(0, 0, m_SCR_WIDTH*3/4, m_SCR_HEIGHT);
+	glViewport(0, 0, m_SCR_WIDTH*m_viewport_ratio, m_SCR_HEIGHT);
 	modelTransformationComponents.push_back(&translate);
 	modelTransformationComponents.push_back(&rotate);
 	modelTransformationComponents.push_back(&scale);
@@ -171,7 +196,7 @@ void Application::init()
 
 void Application::process_framebuffer_size(int width, int height)
 {
-	glViewport(0, 0, width*3/4, height);
+	glViewport(0, 0, width*m_viewport_ratio, height);
 }
 
 void Application::process_key(int key, int scancode, int action, int mods)

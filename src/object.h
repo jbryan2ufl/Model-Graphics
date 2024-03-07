@@ -28,10 +28,10 @@ public:
 	int vertex_count{};
 
 	glm::vec3 normal_to_color(glm::vec3);
-	glm::vec3 pos_to_color(glm::vec3);
 	void print_vec(glm::vec3);
 
-	bool normal_off{true};
+	void load_file(std::string);
+	std::string filename{};
 
 };
 
