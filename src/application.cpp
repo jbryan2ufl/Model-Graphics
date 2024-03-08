@@ -44,7 +44,7 @@ void Application::print_debug()
 
 void Application::draw()
 {
-		glClear(GL_DEPTH_BUFFER_BIT); 
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
 		m_shader.use();
 		modelTransformation=glm::mat4{1.0f};
@@ -102,15 +102,7 @@ void Application::draw()
 			if (ImGui::Checkbox("useGPU", &useGPU))
 			{
 				obj->load_file(obj->filename);
-			}
-			if (ImGui::Button("Print Vertex Data"))
-			{
-				print_debug();
-			}
-			static bool dummy{};
-			if (ImGui::Checkbox("Clear BG", &dummy))
-			{
-				glClear(GL_COLOR_BUFFER_BIT);
+				reload_data();
 			}
 
 			for (auto& transformation : modelTransformationComponents)
