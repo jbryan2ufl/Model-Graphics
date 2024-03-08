@@ -47,6 +47,7 @@ public:
 	Shader m_shader{};
 
 	glm::mat4 modelTransformation{1.0f};
+	bool useGPU{false};
 
 	Transformation scale{"Scale", glm::mat4{1.0f}};
 	Transformation rotate{"Rotate", glm::mat4{1.0f}};
@@ -64,7 +65,7 @@ public:
 	float lastX{};
 	float lastY{};
 
-	bool useEBO{false};
+	bool useEBO{true};
 
 	Object* obj;
 
@@ -93,6 +94,8 @@ public:
 	void close();
 
 	void reload_data();
+
+	void print_debug();
 };
 
 static void framebuffer_size_callback(GLFWwindow*, int, int);

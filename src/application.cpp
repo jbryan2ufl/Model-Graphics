@@ -34,9 +34,17 @@ void Application::reload_data()
 
 }
 
+void Application::print_debug()
+{
+	for (auto& n : obj->vertex_data)
+	{
+		obj->print_vec(n);
+	}
+}
+
 void Application::draw()
 {
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
+		glClear(GL_DEPTH_BUFFER_BIT); 
 
 		m_shader.use();
 		modelTransformation=glm::mat4{1.0f};
@@ -45,7 +53,30 @@ void Application::draw()
 			modelTransformation*=transformation->t;
 		}
 
-		m_shader.setMat4("modelTransformation", modelTransformation);
+		if (useGPU)
+		{
+			m_shader.setMat4("modelTransformation", modelTransformation);
+		}
+		else
+		{
+			m_shader.setMat4("modelTransformation", glm::mat4{1.0f});
+			if (useEBO)
+			{
+				for (int i{}; i < obj->vertex_data.size(); i++)
+				{
+					obj->vertex_data[i] = modelTransformation * glm::vec4{obj->vertex_data_copy[i], 1.0f};
+				}
+			}
+			else
+			{
+				for (int i{}; i < obj->full_index_data.size(); i++)
+				{
+					obj->full_vertex_data[i] = modelTransformation * glm::vec4{obj->vertex_data_copy[obj->full_index_data[i]], 1.0f};
+				}
+			}
+			reload_data();
+		}
+
 		if (useEBO)
 		{
 			glDrawElements(GL_TRIANGLES, obj->full_index_data.size()*sizeof(unsigned int), GL_UNSIGNED_INT, 0);
@@ -67,6 +98,19 @@ void Application::draw()
 			if (ImGui::Checkbox("EBO", &useEBO))
 			{
 				reload_data();
+			}
+			if (ImGui::Checkbox("useGPU", &useGPU))
+			{
+				obj->load_file(obj->filename);
+			}
+			if (ImGui::Button("Print Vertex Data"))
+			{
+				print_debug();
+			}
+			static bool dummy{};
+			if (ImGui::Checkbox("Clear BG", &dummy))
+			{
+				glClear(GL_COLOR_BUFFER_BIT);
 			}
 
 			for (auto& transformation : modelTransformationComponents)

@@ -4,6 +4,7 @@ void Object::load_file(std::string fn)
 {
 	filename=fn;
 	vertex_data.clear();
+	vertex_data_copy.clear();
 	color_data.clear();
 	normal_data.clear();
 	full_vertex_data.clear();
@@ -35,6 +36,7 @@ void Object::load_file(std::string fn)
 				vertex[i]=std::stof(term);
 			}
 			vertex_data.push_back(vertex);
+			vertex_data_copy.push_back(vertex);
 		}
 		
 		if (term == "vn")
@@ -69,7 +71,6 @@ void Object::load_file(std::string fn)
 				full_vertex_data.push_back(vertex_data[face_vertices.end()[-1]]);
 
 				face_vertices.pop_back();
-				vertex_count += 3;
 			}
 			while (index_data.size() > 2)
 			{
