@@ -1,7 +1,6 @@
 *.o
 .vscode
 imgui.ini
-*.exe
 .gitignore
 data/Fantasy Dragon.obj
 gdb.exe.stackdump
