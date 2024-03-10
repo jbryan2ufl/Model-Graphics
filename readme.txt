@@ -1,6 +1,6 @@
-to run the project do the following:
-	1. run the makefile using "make"
-	2. run main.exe
+to run open main.exe
+
+to build run "make"
 
 the controls are as follows:
 	translation using arrow keys
