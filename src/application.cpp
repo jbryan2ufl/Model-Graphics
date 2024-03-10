@@ -95,6 +95,21 @@ void Application::draw()
 		ImGui::SetNextWindowSize(ImVec2{m_SCR_WIDTH*(1-m_viewport_ratio),m_SCR_HEIGHT});
 		if (ImGui::Begin("Settings", 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration))
 		{
+			if (ImGui::Checkbox("Wireframe Mode", &wireframe))
+			{
+				if (wireframe)
+				{
+					glPolygonMode(GL_FRONT, GL_LINE);
+				}
+				else
+				{
+					glPolygonMode(GL_FRONT, GL_FILL);
+				}
+			}
+			if (ImGui::Checkbox("Cap FPS", &vsync))
+			{
+				glfwSwapInterval(vsync);
+			}
 			if (ImGui::Checkbox("EBO", &useEBO))
 			{
 				reload_data();
@@ -103,6 +118,12 @@ void Application::draw()
 			{
 				obj->load_file(obj->filename);
 				reload_data();
+			}
+			if (ImGui::Button("Reset All Matrices"))
+			{
+				translate.t = glm::mat4{1.0f};
+				rotate.t = glm::mat4{1.0f};
+				scale.t = glm::mat4{1.0f};
 			}
 
 			for (auto& transformation : modelTransformationComponents)
@@ -138,10 +159,8 @@ void Application::draw()
 			}
 		}
 		ImGui::End();
-		// ImGui::ShowDemoWindow();
 		ImGui::Render();
 
-		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		glfwSwapBuffers(m_window);
 }
@@ -192,6 +211,9 @@ void Application::init()
 	glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
 	glEnable(GL_DEPTH_TEST);
+	glfwSwapInterval(vsync);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);
 
 
 	// imgui configuration
@@ -206,8 +228,6 @@ void Application::init()
 
 	// start glew
 	glewInit();
-
-	glfwSwapInterval(1);
 
 	m_shader = Shader("src/source.vs", "src/source.fs");
 
@@ -275,8 +295,6 @@ void Application::process_cursor_position(double xposIn, double yposIn)
 		lastY=ypos;
 		rotate.t=glm::rotate(rotate.t,-xoffset*0.01f,glm::vec3{glm::row(rotate.t, 1)});
 		rotate.t=glm::rotate(rotate.t,-yoffset*0.01f,glm::vec3{glm::row(rotate.t, 0)});
-		// rotate.t=glm::rotate.t(rotate.t,-xoffset*0.01f,glm::vec3{0.0f, 1.0f, 0.0f});
-		// rotate.t=glm::rotate.t(rotate.t,-yoffset*0.01f,glm::vec3{1.0f, 0.0f, 0.0f});
 	}
 }
 
@@ -289,12 +307,10 @@ void Application::process_input()
 {
 	if (glfwGetKey(m_window, GLFW_KEY_LEFT) == GLFW_PRESS)
 	{
-		// rotate.t = glm::rotate.t(rotate.t, -0.01f, glm::vec3{0.0f, 0.0f, -1.0f});
 		translate.t = glm::translate(translate.t, glm::vec3{-0.01f, 0.0f, 0.0f});
 	}
 	if (glfwGetKey(m_window, GLFW_KEY_RIGHT) == GLFW_PRESS)
 	{
-		// rotate.t = glm::rotate.t(rotate.t, 0.01f, glm::vec3{0.0f, 0.0f, -1.0f});
 		translate.t = glm::translate(translate.t, glm::vec3{0.01f, 0.0f, 0.0f});
 	}
 	if (glfwGetKey(m_window, GLFW_KEY_UP) == GLFW_PRESS)
@@ -308,33 +324,27 @@ void Application::process_input()
 
 	if (glfwGetKey(m_window, GLFW_KEY_Q) == GLFW_PRESS)
 	{
-		// rotate.t = glm::rotate.t(rotate.t, 0.01f, glm::vec3{0.0f, 0.0f, 1.0f});
 		rotate.t = glm::rotate(rotate.t, 0.01f, glm::vec3{glm::row(rotate.t, 2)});
 	}
 	if (glfwGetKey(m_window, GLFW_KEY_E) == GLFW_PRESS)
 	{
-		// rotate.t = glm::rotate.t(rotate.t, -0.01f, glm::vec3{0.0f, 0.0f, 1.0f});
 		rotate.t = glm::rotate(rotate.t, -0.01f, glm::vec3{glm::row(rotate.t, 2)});
 	}
 	if (glfwGetKey(m_window, GLFW_KEY_W) == GLFW_PRESS)
 	{
 		rotate.t = glm::rotate(rotate.t, 0.01f, glm::vec3{glm::row(rotate.t, 0)});
-		// rotate.t = glm::rotate.t(rotate.t, 0.01f, glm::vec3{1.0f, 0.0f, 0.0f});
 	}
 	if (glfwGetKey(m_window, GLFW_KEY_S) == GLFW_PRESS)
 	{
 		rotate.t = glm::rotate(rotate.t, -0.01f, glm::vec3{glm::row(rotate.t, 0)});
-		// rotate.t = glm::rotate.t(rotate.t, -0.01f, glm::vec3{1.0f, 0.0f, 0.0f});
 	}
 	if (glfwGetKey(m_window, GLFW_KEY_A) == GLFW_PRESS)
 	{
 		rotate.t = glm::rotate(rotate.t, 0.01f, glm::vec3{glm::row(rotate.t, 1)});
-		// rotate.t = glm::rotate.t(rotate.t, -0.01f, glm::vec3{0.0f, 1.0f, 0.0f});
 	}
 	if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS)
 	{
 		rotate.t = glm::rotate(rotate.t, -0.01f, glm::vec3{glm::row(rotate.t, 1)});
-		// rotate.t = glm::rotate.t(rotate.t, 0.01f, glm::vec3{0.0f, 1.0f, 0.0f});
 	}
 
 	if (glfwGetMouseButton(m_window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
