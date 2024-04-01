@@ -44,129 +44,108 @@ void Application::print_debug()
 
 void Application::draw()
 {
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
-		m_shader.use();
-		modelTransformation=glm::mat4{1.0f};
-		for (auto& transformation : modelTransformationComponents)
-		{
-			modelTransformation*=transformation->t;
-		}
+	m_shader.use();
+	mvpMatrix=glm::mat4{1.0f};
 
-		if (useGPU)
+	view.t = camera.getViewMatrix();
+	projection.t = glm::perspective(glm::radians(m_fov), static_cast<float>(m_SCR_WIDTH) / m_SCR_HEIGHT, m_nearPlane, m_farPlane);
+
+	for (auto& transformation : mvpMatrixComponents)
+	{
+		mvpMatrix*=transformation->t;
+	}
+
+
+	m_shader.setMat4("mvpMatrix", mvpMatrix);
+
+	if (useEBO)
+	{
+		glDrawElements(GL_TRIANGLES, obj->full_index_data.size()*sizeof(unsigned int), GL_UNSIGNED_INT, 0);
+	}
+	else
+	{
+		glDrawArrays(GL_TRIANGLES, 0, obj->full_vertex_data.size()*sizeof(glm::vec3));
+	}
+
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+	ImGui::SetNextWindowBgAlpha(1.0f);
+	glfwGetWindowSize(m_window, &m_SCR_WIDTH, &m_SCR_HEIGHT);
+	ImGui::SetNextWindowPos(ImVec2{m_SCR_WIDTH*m_viewport_ratio,0});
+	ImGui::SetNextWindowSize(ImVec2{m_SCR_WIDTH*(1-m_viewport_ratio),m_SCR_HEIGHT});
+	if (ImGui::Begin("Settings", 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration))
+	{
+		if (ImGui::Checkbox("Wireframe Mode", &wireframe))
 		{
-			m_shader.setMat4("modelTransformation", modelTransformation);
-		}
-		else
-		{
-			m_shader.setMat4("modelTransformation", glm::mat4{1.0f});
-			if (useEBO)
+			if (wireframe)
 			{
-				for (int i{}; i < obj->vertex_data.size(); i++)
-				{
-					obj->vertex_data[i] = modelTransformation * glm::vec4{obj->vertex_data_copy[i], 1.0f};
-				}
+				glPolygonMode(GL_FRONT, GL_LINE);
 			}
 			else
 			{
-				for (int i{}; i < obj->full_index_data.size(); i++)
-				{
-					obj->full_vertex_data[i] = modelTransformation * glm::vec4{obj->vertex_data_copy[obj->full_index_data[i]], 1.0f};
-				}
+				glPolygonMode(GL_FRONT, GL_FILL);
 			}
+		}
+		if (ImGui::Checkbox("Cap FPS", &vsync))
+		{
+			glfwSwapInterval(vsync);
+		}
+		if (ImGui::Checkbox("EBO", &useEBO))
+		{
 			reload_data();
 		}
-
-		if (useEBO)
+		if (ImGui::Button("Reset All Matrices"))
 		{
-			glDrawElements(GL_TRIANGLES, obj->full_index_data.size()*sizeof(unsigned int), GL_UNSIGNED_INT, 0);
-		}
-		else
-		{
-			glDrawArrays(GL_TRIANGLES, 0, obj->full_vertex_data.size()*sizeof(glm::vec3));
+			translate.t = glm::mat4{1.0f};
+			rotate.t = glm::mat4{1.0f};
+			scale.t = glm::mat4{1.0f};
 		}
 
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
-		ImGui::SetNextWindowBgAlpha(1.0f);
-		glfwGetWindowSize(m_window, &m_SCR_WIDTH, &m_SCR_HEIGHT);
-		ImGui::SetNextWindowPos(ImVec2{m_SCR_WIDTH*m_viewport_ratio,0});
-		ImGui::SetNextWindowSize(ImVec2{m_SCR_WIDTH*(1-m_viewport_ratio),m_SCR_HEIGHT});
-		if (ImGui::Begin("Settings", 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration))
+		for (auto& transformation : mvpMatrixComponents)
 		{
-			if (ImGui::Checkbox("Wireframe Mode", &wireframe))
+			ImGui::Text(transformation->name.c_str());
+			if (ImGui::BeginTable("", 4))
 			{
-				if (wireframe)
+				for (int i{}; i < 4; i++)
 				{
-					glPolygonMode(GL_FRONT, GL_LINE);
-				}
-				else
-				{
-					glPolygonMode(GL_FRONT, GL_FILL);
-				}
-			}
-			if (ImGui::Checkbox("Cap FPS", &vsync))
-			{
-				glfwSwapInterval(vsync);
-			}
-			if (ImGui::Checkbox("EBO", &useEBO))
-			{
-				reload_data();
-			}
-			if (ImGui::Checkbox("useGPU", &useGPU))
-			{
-				obj->load_file(obj->filename);
-				reload_data();
-			}
-			if (ImGui::Button("Reset All Matrices"))
-			{
-				translate.t = glm::mat4{1.0f};
-				rotate.t = glm::mat4{1.0f};
-				scale.t = glm::mat4{1.0f};
-			}
-
-			for (auto& transformation : modelTransformationComponents)
-			{
-				ImGui::Text(transformation->name.c_str());
-				if (ImGui::BeginTable("", 4))
-				{
-					for (int i{}; i < 4; i++)
+					ImGui::TableNextRow();
+					for (int j{}; j < 4; j++)
 					{
-						ImGui::TableNextRow();
-						for (int j{}; j < 4; j++)
-						{
-							ImGui::TableSetColumnIndex(j);
-							ImGui::Text(std::to_string(transformation->t[j][i]).c_str());
-						}
+						ImGui::TableSetColumnIndex(j);
+						ImGui::Text(std::to_string(transformation->t[j][i]).c_str());
 					}
-					ImGui::EndTable();
 				}
-				ImGui::NewLine();
+				ImGui::EndTable();
 			}
-			static unsigned int selected{3};
-			for (int i{}; i<obj_names.size(); i++)
+			ImGui::NewLine();
+		}
+		static unsigned int selected{3};
+		for (int i{}; i<obj_names.size(); i++)
+		{
+			if (ImGui::Selectable(obj_names[i].c_str(), selected==i))
 			{
-				if (ImGui::Selectable(obj_names[i].c_str(), selected==i))
+				if (obj_names[i].c_str() != obj->filename)
 				{
-					if (obj_names[i].c_str() != obj->filename)
-					{
-						obj->load_file(obj_names[i].c_str());
-						reload_data();
-					}
-					selected=i;
+					obj->load_file(obj_names[i].c_str());
+					reload_data();
 				}
+				selected=i;
 			}
 		}
-		ImGui::End();
-		ImGui::Render();
+	}
+	ImGui::End();
+	ImGui::Render();
 
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-		glfwSwapBuffers(m_window);
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	glfwSwapBuffers(m_window);
 }
 
 Application::Application()
-{}
+{
+}
 
 void Application::init()
 {
@@ -213,7 +192,7 @@ void Application::init()
 	glEnable(GL_DEPTH_TEST);
 	glfwSwapInterval(vsync);
 	glEnable(GL_CULL_FACE);
-	glCullFace(GL_FRONT);
+	glCullFace(GL_BACK);
 
 
 	// imgui configuration
@@ -244,9 +223,11 @@ void Application::init()
 	glfwSetWindowUserPointer(m_window, this);
 
 	glViewport(0, 0, m_SCR_WIDTH*m_viewport_ratio, m_SCR_HEIGHT);
-	modelTransformationComponents.push_back(&translate);
-	modelTransformationComponents.push_back(&rotate);
-	modelTransformationComponents.push_back(&scale);
+	mvpMatrixComponents.push_back(&projection);
+	mvpMatrixComponents.push_back(&view);
+	mvpMatrixComponents.push_back(&translate);
+	mvpMatrixComponents.push_back(&rotate);
+	mvpMatrixComponents.push_back(&scale);
 }
 
 
@@ -271,12 +252,25 @@ void Application::process_mouse_button(int button, int action, int mods)
 {
 	if (!m_ioptr->WantCaptureMouse)
 	{
+		if (button == GLFW_MOUSE_BUTTON_LEFT)
+		{
+			mouseFocus = action;
+			firstMouse = true;
+			if (action)
+			{
+				glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			}
+			else
+			{
+				glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			}
+		}
 	}
 }
 
 void Application::process_cursor_position(double xposIn, double yposIn)
 {
-	if (!m_ioptr->WantCaptureMouse)
+	if (mouseFocus)
 	{
 		float xpos=static_cast<float>(xposIn);
 		float ypos=static_cast<float>(yposIn);
@@ -289,12 +283,14 @@ void Application::process_cursor_position(double xposIn, double yposIn)
 		}
 
 		float xoffset = xpos-lastX;
-		float yoffset = ypos-lastY;
+		float yoffset = lastY - ypos;
 
 		lastX=xpos;
 		lastY=ypos;
-		rotate.t=glm::rotate(rotate.t,-xoffset*0.01f,glm::vec3{glm::row(rotate.t, 1)});
-		rotate.t=glm::rotate(rotate.t,-yoffset*0.01f,glm::vec3{glm::row(rotate.t, 0)});
+		// rotate.t=glm::rotate(rotate.t,-xoffset*0.01f,glm::vec3{glm::row(rotate.t, 1)});
+		// rotate.t=glm::rotate(rotate.t,-yoffset*0.01f,glm::vec3{glm::row(rotate.t, 0)});
+
+		camera.processMouseMovement(xoffset, yoffset);
 	}
 }
 
@@ -305,52 +301,71 @@ void Application::process_scroll(double xoffset, double yoffset)
 
 void Application::process_input()
 {
-	if (glfwGetKey(m_window, GLFW_KEY_LEFT) == GLFW_PRESS)
-	{
-		translate.t = glm::translate(translate.t, glm::vec3{-0.01f, 0.0f, 0.0f});
-	}
-	if (glfwGetKey(m_window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-	{
-		translate.t = glm::translate(translate.t, glm::vec3{0.01f, 0.0f, 0.0f});
-	}
-	if (glfwGetKey(m_window, GLFW_KEY_UP) == GLFW_PRESS)
-	{
-		translate.t = glm::translate(translate.t, glm::vec3{0.0f, 0.01f, 0.0f});
-	}
-	if (glfwGetKey(m_window, GLFW_KEY_DOWN) == GLFW_PRESS)
-	{
-		translate.t = glm::translate(translate.t, glm::vec3{0.0f, -0.01f, 0.0f});
-	}
-
-	if (glfwGetKey(m_window, GLFW_KEY_Q) == GLFW_PRESS)
-	{
-		rotate.t = glm::rotate(rotate.t, 0.01f, glm::vec3{glm::row(rotate.t, 2)});
-	}
-	if (glfwGetKey(m_window, GLFW_KEY_E) == GLFW_PRESS)
-	{
-		rotate.t = glm::rotate(rotate.t, -0.01f, glm::vec3{glm::row(rotate.t, 2)});
-	}
-	if (glfwGetKey(m_window, GLFW_KEY_W) == GLFW_PRESS)
-	{
-		rotate.t = glm::rotate(rotate.t, 0.01f, glm::vec3{glm::row(rotate.t, 0)});
-	}
-	if (glfwGetKey(m_window, GLFW_KEY_S) == GLFW_PRESS)
-	{
-		rotate.t = glm::rotate(rotate.t, -0.01f, glm::vec3{glm::row(rotate.t, 0)});
-	}
 	if (glfwGetKey(m_window, GLFW_KEY_A) == GLFW_PRESS)
 	{
-		rotate.t = glm::rotate(rotate.t, 0.01f, glm::vec3{glm::row(rotate.t, 1)});
+		camera.processKeyboardMovement(KeyboardMovement::LEFT, m_deltaTime);
 	}
 	if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS)
 	{
-		rotate.t = glm::rotate(rotate.t, -0.01f, glm::vec3{glm::row(rotate.t, 1)});
+		camera.processKeyboardMovement(KeyboardMovement::RIGHT, m_deltaTime);
 	}
-
-	if (glfwGetMouseButton(m_window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+	if (glfwGetKey(m_window, GLFW_KEY_W) == GLFW_PRESS)
 	{
-		firstMouse=true;
+		camera.processKeyboardMovement(KeyboardMovement::FORWARD, m_deltaTime);
 	}
+	if (glfwGetKey(m_window, GLFW_KEY_S) == GLFW_PRESS)
+	{
+		camera.processKeyboardMovement(KeyboardMovement::BACKWARD, m_deltaTime);
+	}
+	if (glfwGetKey(m_window, GLFW_KEY_SPACE) == GLFW_PRESS)
+	{
+		camera.processKeyboardMovement(KeyboardMovement::UP, m_deltaTime);
+	}
+	if (glfwGetKey(m_window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+	{
+		camera.processKeyboardMovement(KeyboardMovement::DOWN, m_deltaTime);
+	}
+	// if (glfwGetKey(m_window, GLFW_KEY_LEFT) == GLFW_PRESS)
+	// {
+	// 	translate.t = glm::translate(translate.t, glm::vec3{-0.01f, 0.0f, 0.0f});
+	// }
+	// if (glfwGetKey(m_window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+	// {
+	// 	translate.t = glm::translate(translate.t, glm::vec3{0.01f, 0.0f, 0.0f});
+	// }
+	// if (glfwGetKey(m_window, GLFW_KEY_UP) == GLFW_PRESS)
+	// {
+	// 	translate.t = glm::translate(translate.t, glm::vec3{0.0f, 0.01f, 0.0f});
+	// }
+	// if (glfwGetKey(m_window, GLFW_KEY_DOWN) == GLFW_PRESS)
+	// {
+	// 	translate.t = glm::translate(translate.t, glm::vec3{0.0f, -0.01f, 0.0f});
+	// }
+
+	// if (glfwGetKey(m_window, GLFW_KEY_Q) == GLFW_PRESS)
+	// {
+	// 	rotate.t = glm::rotate(rotate.t, 0.01f, glm::vec3{glm::row(rotate.t, 2)});
+	// }
+	// if (glfwGetKey(m_window, GLFW_KEY_E) == GLFW_PRESS)
+	// {
+	// 	rotate.t = glm::rotate(rotate.t, -0.01f, glm::vec3{glm::row(rotate.t, 2)});
+	// }
+	// if (glfwGetKey(m_window, GLFW_KEY_W) == GLFW_PRESS)
+	// {
+	// 	rotate.t = glm::rotate(rotate.t, 0.01f, glm::vec3{glm::row(rotate.t, 0)});
+	// }
+	// if (glfwGetKey(m_window, GLFW_KEY_S) == GLFW_PRESS)
+	// {
+	// 	rotate.t = glm::rotate(rotate.t, -0.01f, glm::vec3{glm::row(rotate.t, 0)});
+	// }
+	// if (glfwGetKey(m_window, GLFW_KEY_A) == GLFW_PRESS)
+	// {
+	// 	rotate.t = glm::rotate(rotate.t, 0.01f, glm::vec3{glm::row(rotate.t, 1)});
+	// }
+	// if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS)
+	// {
+	// 	rotate.t = glm::rotate(rotate.t, -0.01f, glm::vec3{glm::row(rotate.t, 1)});
+	// }
 }
 
 
@@ -359,6 +374,11 @@ void Application::run()
 	while (!glfwWindowShouldClose(m_window))
 	{
 		process_input();
+		
+		float m_currentFrameTime = static_cast<float>(glfwGetTime());
+		m_deltaTime = m_currentFrameTime - m_lastFrameTime;
+		m_lastFrameTime = m_currentFrameTime;
+
 		draw();
 		glfwPollEvents();
 	}

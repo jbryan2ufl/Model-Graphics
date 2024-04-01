@@ -21,6 +21,7 @@
 
 #include "shader.h"
 #include "object.h"
+#include "camera.h"
 
 struct Transformation
 {
@@ -31,51 +32,6 @@ struct Transformation
 class Application
 {
 public:
-	// settings
-
-
-	int m_SCR_WIDTH{1440};
-	int m_SCR_HEIGHT{1080};
-	const float m_viewport_ratio{m_SCR_HEIGHT/static_cast<float>(m_SCR_WIDTH)};
-	int m_VIEW_WIDTH{m_SCR_WIDTH*m_viewport_ratio};
-	int m_VIEW_HEIGHT{m_SCR_HEIGHT};
-
-	ImGuiIO* m_ioptr{};
-
-	GLFWwindow* m_window{};
-
-	Shader m_shader{};
-
-	glm::mat4 modelTransformation{1.0f};
-
-	Transformation scale{"Scale", glm::mat4{1.0f}};
-	Transformation rotate{"Rotate", glm::mat4{1.0f}};
-	Transformation translate{"Translate", glm::mat4{1.0f}};
-	std::vector<Transformation*> modelTransformationComponents{};
-
-	std::vector<std::string> obj_names{};
-
-	unsigned int m_VAO;
-	unsigned int m_ColorVBO;
-	unsigned int m_VBO;
-	unsigned int m_EBO;
-
-	bool firstMouse{};
-	float lastX{};
-	float lastY{};
-
-	bool vsync{true};
-	bool useGPU{true};
-	bool wireframe{false};
-	bool useEBO{true};
-
-	Object* obj;
-
-	void draw();
-
-	void process_input();
-
-	public:
 
 	Application();
 
@@ -98,6 +54,60 @@ public:
 	void reload_data();
 
 	void print_debug();
+
+private:
+	// settings
+	int m_SCR_WIDTH{1440};
+	int m_SCR_HEIGHT{1080};
+	const float m_viewport_ratio{m_SCR_HEIGHT/static_cast<float>(m_SCR_WIDTH)};
+	int m_VIEW_WIDTH{m_SCR_WIDTH*m_viewport_ratio};
+	int m_VIEW_HEIGHT{m_SCR_HEIGHT};
+
+	float m_fov{60.0f};
+	float m_nearPlane{0.1f};
+	float m_farPlane{10000.0f};
+
+	Camera camera{};
+
+	ImGuiIO* m_ioptr{};
+
+	GLFWwindow* m_window{};
+
+	Shader m_shader{};
+
+	// MVP matrix
+	Transformation scale{"Scale", glm::mat4{1.0f}};
+	Transformation rotate{"Rotate", glm::mat4{1.0f}};
+	Transformation translate{"Translate", glm::mat4{1.0f}};
+	Transformation view{"View", glm::mat4{1.0f}};
+	Transformation projection{"Projection", glm::mat4{1.0f}};
+	std::vector<Transformation*> mvpMatrixComponents{};
+	glm::mat4 mvpMatrix{};
+
+	std::vector<std::string> obj_names{};
+
+	unsigned int m_VAO;
+	unsigned int m_ColorVBO;
+	unsigned int m_VBO;
+	unsigned int m_EBO;
+
+	bool mouseFocus{};
+	bool firstMouse{};
+	float lastX{};
+	float lastY{};
+
+	float m_lastFrameTime{};
+	float m_deltaTime{};
+
+	bool vsync{true};
+	bool wireframe{false};
+	bool useEBO{false};
+
+	Object* obj;
+
+	void draw();
+
+	void process_input();
 };
 
 static void framebuffer_size_callback(GLFWwindow*, int, int);

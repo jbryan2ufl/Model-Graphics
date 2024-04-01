@@ -113,7 +113,7 @@ Object::Object()
 {
 	std::srand(std::time(nullptr));
 
-	load_file("cow.obj");
+	load_file("cube.obj");
 }
 
 glm::vec3 Object::normal_to_color(glm::vec3 normal)
