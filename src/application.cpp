@@ -50,7 +50,7 @@ void Application::draw()
 	mvpMatrix=glm::mat4{1.0f};
 
 	view.t = camera.getViewMatrix();
-	projection.t = glm::perspective(glm::radians(m_fov), static_cast<float>(m_SCR_WIDTH) / m_SCR_HEIGHT, m_nearPlane, m_farPlane);
+	projection.t = glm::perspective(glm::radians(camera.m_fov), static_cast<float>(m_VIEW_WIDTH) / m_VIEW_HEIGHT, m_nearPlane, m_farPlane);
 
 	for (auto& transformation : mvpMatrixComponents)
 	{
@@ -97,6 +97,8 @@ void Application::draw()
 		{
 			reload_data();
 		}
+
+
 		if (ImGui::Button("Reset All Matrices"))
 		{
 			translate.t = glm::mat4{1.0f};
@@ -104,35 +106,51 @@ void Application::draw()
 			scale.t = glm::mat4{1.0f};
 		}
 
-		for (auto& transformation : mvpMatrixComponents)
+		if (ImGui::CollapsingHeader("Settings"))
 		{
-			ImGui::Text(transformation->name.c_str());
-			if (ImGui::BeginTable("", 4))
-			{
-				for (int i{}; i < 4; i++)
-				{
-					ImGui::TableNextRow();
-					for (int j{}; j < 4; j++)
-					{
-						ImGui::TableSetColumnIndex(j);
-						ImGui::Text(std::to_string(transformation->t[j][i]).c_str());
-					}
-				}
-				ImGui::EndTable();
-			}
-			ImGui::NewLine();
+			ImGui::SliderFloat("FOV", &camera.m_fov, 10.0f, 100.0f);
+			ImGui::SliderFloat("Near Plane", &m_nearPlane, 0.1f, 5.0f);
+			ImGui::SliderFloat("Far Plane", &m_farPlane, 5.0f, 100.0f);
+			ImGui::SliderFloat("Movement Speed", &camera.m_movementSpeed, 1.0f, 10.0f);
+			ImGui::SliderFloat("Mouse Sensitivity", &camera.m_mouseSensitivity, 0.01f, 0.5f);
 		}
-		static unsigned int selected{3};
-		for (int i{}; i<obj_names.size(); i++)
+
+		if (ImGui::CollapsingHeader("Matrices"))
 		{
-			if (ImGui::Selectable(obj_names[i].c_str(), selected==i))
+			for (auto& transformation : mvpMatrixComponents)
 			{
-				if (obj_names[i].c_str() != obj->filename)
+				ImGui::Text(transformation->name.c_str());
+				if (ImGui::BeginTable("", 4))
 				{
-					obj->load_file(obj_names[i].c_str());
-					reload_data();
+					for (int i{}; i < 4; i++)
+					{
+						ImGui::TableNextRow();
+						for (int j{}; j < 4; j++)
+						{
+							ImGui::TableSetColumnIndex(j);
+							ImGui::Text(std::to_string(transformation->t[j][i]).c_str());
+						}
+					}
+					ImGui::EndTable();
 				}
-				selected=i;
+				ImGui::NewLine();
+			}
+		}
+
+		if (ImGui::CollapsingHeader("Meshes"))
+		{
+			static unsigned int selected{std::distance(obj_names.begin(), std::find(obj_names.begin(), obj_names.end(), obj->filename))};
+			for (int i{}; i<obj_names.size(); i++)
+			{
+				if (ImGui::Selectable(obj_names[i].c_str(), selected==i))
+				{
+					if (obj_names[i].c_str() != obj->filename)
+					{
+						obj->load_file(obj_names[i].c_str());
+						reload_data();
+					}
+					selected=i;
+				}
 			}
 		}
 	}
@@ -228,6 +246,7 @@ void Application::init()
 	mvpMatrixComponents.push_back(&translate);
 	mvpMatrixComponents.push_back(&rotate);
 	mvpMatrixComponents.push_back(&scale);
+
 }
 
 

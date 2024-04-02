@@ -13,6 +13,7 @@
 #include <glm/gtc/matrix_access.hpp>
 
 #include <filesystem>
+#include <algorithm>
 
 // imgui
 #include "imgui.h"
@@ -63,9 +64,8 @@ private:
 	int m_VIEW_WIDTH{m_SCR_WIDTH*m_viewport_ratio};
 	int m_VIEW_HEIGHT{m_SCR_HEIGHT};
 
-	float m_fov{60.0f};
 	float m_nearPlane{0.1f};
-	float m_farPlane{10000.0f};
+	float m_farPlane{100.0f};
 
 	Camera camera{};
 
@@ -90,6 +90,7 @@ private:
 	unsigned int m_ColorVBO;
 	unsigned int m_VBO;
 	unsigned int m_EBO;
+	unsigned int depthTexture{};
 
 	bool mouseFocus{};
 	bool firstMouse{};
