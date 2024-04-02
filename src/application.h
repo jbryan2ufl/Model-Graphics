@@ -90,7 +90,7 @@ private:
 	unsigned int m_ColorVBO;
 	unsigned int m_VBO;
 	unsigned int m_EBO;
-	unsigned int depthTexture{};
+
 
 	bool mouseFocus{};
 	bool firstMouse{};
@@ -100,6 +100,7 @@ private:
 	float m_lastFrameTime{};
 	float m_deltaTime{};
 
+	bool depthVisualization{false};
 	bool vsync{true};
 	bool wireframe{false};
 	bool useEBO{false};

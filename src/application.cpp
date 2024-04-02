@@ -97,6 +97,19 @@ void Application::draw()
 		{
 			reload_data();
 		}
+		if (ImGui::Checkbox("Depth Visualization", &depthVisualization))
+		{
+			if (depthVisualization)
+			{
+				m_shader.updateFragmentShader("src/depth_source.fs");
+			}
+			else
+			{
+				m_shader.updateFragmentShader("src/source.fs");
+			}
+			m_shader.setFloat("near", m_nearPlane);
+			m_shader.setFloat("far", m_farPlane);
+		}
 
 
 		if (ImGui::Button("Reset All Matrices"))
@@ -361,30 +374,30 @@ void Application::process_input()
 	// 	translate.t = glm::translate(translate.t, glm::vec3{0.0f, -0.01f, 0.0f});
 	// }
 
-	// if (glfwGetKey(m_window, GLFW_KEY_Q) == GLFW_PRESS)
-	// {
-	// 	rotate.t = glm::rotate(rotate.t, 0.01f, glm::vec3{glm::row(rotate.t, 2)});
-	// }
-	// if (glfwGetKey(m_window, GLFW_KEY_E) == GLFW_PRESS)
-	// {
-	// 	rotate.t = glm::rotate(rotate.t, -0.01f, glm::vec3{glm::row(rotate.t, 2)});
-	// }
-	// if (glfwGetKey(m_window, GLFW_KEY_W) == GLFW_PRESS)
-	// {
-	// 	rotate.t = glm::rotate(rotate.t, 0.01f, glm::vec3{glm::row(rotate.t, 0)});
-	// }
-	// if (glfwGetKey(m_window, GLFW_KEY_S) == GLFW_PRESS)
-	// {
-	// 	rotate.t = glm::rotate(rotate.t, -0.01f, glm::vec3{glm::row(rotate.t, 0)});
-	// }
-	// if (glfwGetKey(m_window, GLFW_KEY_A) == GLFW_PRESS)
-	// {
-	// 	rotate.t = glm::rotate(rotate.t, 0.01f, glm::vec3{glm::row(rotate.t, 1)});
-	// }
-	// if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS)
-	// {
-	// 	rotate.t = glm::rotate(rotate.t, -0.01f, glm::vec3{glm::row(rotate.t, 1)});
-	// }
+	if (glfwGetKey(m_window, GLFW_KEY_U) == GLFW_PRESS)
+	{
+		rotate.t = glm::rotate(rotate.t, 0.01f, glm::vec3{glm::row(rotate.t, 2)});
+	}
+	if (glfwGetKey(m_window, GLFW_KEY_O) == GLFW_PRESS)
+	{
+		rotate.t = glm::rotate(rotate.t, -0.01f, glm::vec3{glm::row(rotate.t, 2)});
+	}
+	if (glfwGetKey(m_window, GLFW_KEY_I) == GLFW_PRESS)
+	{
+		rotate.t = glm::rotate(rotate.t, 0.01f, glm::vec3{glm::row(rotate.t, 0)});
+	}
+	if (glfwGetKey(m_window, GLFW_KEY_K) == GLFW_PRESS)
+	{
+		rotate.t = glm::rotate(rotate.t, -0.01f, glm::vec3{glm::row(rotate.t, 0)});
+	}
+	if (glfwGetKey(m_window, GLFW_KEY_J) == GLFW_PRESS)
+	{
+		rotate.t = glm::rotate(rotate.t, 0.01f, glm::vec3{glm::row(rotate.t, 1)});
+	}
+	if (glfwGetKey(m_window, GLFW_KEY_L) == GLFW_PRESS)
+	{
+		rotate.t = glm::rotate(rotate.t, -0.01f, glm::vec3{glm::row(rotate.t, 1)});
+	}
 }
 
 
