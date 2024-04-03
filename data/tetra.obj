@@ -1,0 +1,29 @@
+##
+##  Three-D Library generated .obj file
+##  cube
+##
+
+mtllib cube.mtl
+usemtl red
+
+# 0 materials
+
+v 0 1 0
+v -1 -1 -1
+v 1 -1 -1
+v 0 -1 1
+
+vn 0 1 0
+vn -0.577350 -0.577350 -0.577350
+vn 0.577350 -0.577350 -0.577350
+vn 0 -0.707107 0.707107
+# 4 vertex normals
+
+# 0 texture vertices
+
+g default
+f 1//1 2//2 3//3
+f 1//1 3//3 4//4
+f 1//1 4//4 2//2
+f 2//2 3//3 4//4
+# 4 faces

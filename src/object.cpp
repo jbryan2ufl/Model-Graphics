@@ -1,7 +1,7 @@
 #include "object.h"
 
-#define COLOR
-#define DEBUG
+// #define COLOR
+// #define DEBUG
 
 void Object::load_file(std::string fn)
 {
@@ -15,6 +15,8 @@ void Object::load_file(std::string fn)
 	index_data.clear();
 	full_index_data.clear();
 	normal_index_data.clear();
+	full_flat_normal_data.clear();
+	full_normal_data.clear();
 
 	std::ifstream file{"data/"+filename};
 
@@ -50,7 +52,7 @@ void Object::load_file(std::string fn)
 				ss >> term;
 				vertex[i]=std::stof(term);
 			}
-			normal_data.push_back(-1.0f*vertex);
+			normal_data.push_back(vertex);
 		}
 
 		if (term == "f")
@@ -155,11 +157,11 @@ void Object::load_file(std::string fn)
 	#endif
 }
 
-Object::Object()
+Object::Object(std::string filepath)
 {
-	std::srand(std::time(nullptr));
+	// std::srand(std::time(nullptr));
 
-	load_file("cube.obj");
+	load_file(filepath);
 }
 
 glm::vec3 Object::normal_to_color(glm::vec3 normal)

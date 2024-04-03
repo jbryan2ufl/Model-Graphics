@@ -75,6 +75,7 @@ private:
 
 	Shader m_shader;
 	Shader m_normalShader;
+	Shader m_lightShader;
 
 	// MVP matrix
 	Transformation scale{"Scale", glm::mat4{1.0f}};
@@ -94,6 +95,9 @@ private:
 	unsigned int m_EBO;
 	unsigned int m_normalVBO;
 
+	unsigned int m_lightVAO;
+	unsigned int m_lightVBO;
+
 
 	bool mouseFocus{};
 	bool firstMouse{};
@@ -107,11 +111,12 @@ private:
 	bool vsync{true};
 	bool wireframe{false};
 	bool useEBO{false};
-	bool showNormals{true};
+	bool showNormals{false};
 
 	int shaderSelection{0};
 
 	Object* obj;
+	Object* lightObj;
 
 	float ambientStrength{0.0f};
 	float diffuseStrength{1.0f};

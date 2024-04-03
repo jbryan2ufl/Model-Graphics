@@ -15,7 +15,7 @@ class Object
 	glm::vec3 random_color();
 
 public:
-	Object();
+	Object(std::string filepath="cube.obj");
 
 	std::vector<glm::vec3> vertex_data{};
 	std::vector<glm::vec3> vertex_data_copy{};

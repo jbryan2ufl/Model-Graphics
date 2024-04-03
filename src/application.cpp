@@ -4,6 +4,7 @@
 
 void Application::reload_data()
 {
+	glBindVertexArray(m_VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, m_positionVBO);
 	if (useEBO)
 	{
@@ -55,9 +56,14 @@ void Application::reload_data()
 		glBufferData(GL_ARRAY_BUFFER, obj->full_color_data.size()*sizeof(glm::vec3), obj->full_color_data.data(), GL_STATIC_DRAW);
 		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
 		glEnableVertexAttribArray(2);
+
+		std::cout << "\nVERTEX SIZE: " << obj->full_vertex_data.size()*sizeof(glm::vec3) << '\n';
+		std::cout << "FLAT NORMAL SIZE: " << obj->full_flat_normal_data.size()*sizeof(glm::vec3) << '\n';
+		std::cout << "NORMAL SIZE: " << obj->full_normal_data.size()*sizeof(glm::vec3) << '\n';
+		std::cout << "COLOR SIZE: " << obj->full_color_data.size()*sizeof(glm::vec3) << '\n';
 	}
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
-
+	glBindVertexArray(0);
 }
 
 void Application::print_debug()
@@ -85,6 +91,7 @@ void Application::draw()
 	modelMatrix = glm::mat4{1.0f};
 	modelMatrix *= translate.t * rotate.t * scale.t;
 
+	glBindVertexArray(m_VAO);
 	m_shader.use();
 	m_shader.setMat4("mvpMatrix", mvpMatrix);
 	m_shader.setMat4("modelMatrix", modelMatrix);
@@ -118,6 +125,14 @@ void Application::draw()
 			glDrawArrays(GL_TRIANGLES, 0, obj->full_vertex_data.size());
 		}
 	}
+
+	glBindVertexArray(m_lightVAO);
+	m_lightShader.use();
+	m_lightShader.setMat4("vpMatrix", projection.t * view.t);
+	m_lightShader.setVec3("lightPos", lightPos);
+	glDrawArrays(GL_TRIANGLES, 0, lightObj->full_vertex_data.size());
+	glBindVertexArray(0);
+
 
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
@@ -318,15 +333,25 @@ void Application::init()
 
 	m_shader = Shader("src/gouraud_source.vs", "src/gouraud_source.fs");
 	m_normalShader = Shader("src/normal_source.vs", "src/normal_source.fs", "src/normal_source.gs");
+	m_lightShader = Shader{"src/light_source.vs", "src/light_source.fs"};
 
 	glGenBuffers(1, &m_positionVBO);
 	glGenBuffers(1, &m_normalVBO);
 	glGenBuffers(1, &m_colorVBO);
 	glGenBuffers(1, &m_EBO);
 	glGenVertexArrays(1, &m_VAO);
-	glBindVertexArray(m_VAO);
 
 	obj = new Object();
+	lightObj = new Object();
+
+	glGenBuffers(1, &m_lightVBO);
+	glGenVertexArrays(1, &m_lightVAO);
+	glBindVertexArray(m_lightVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, m_lightVBO);
+	glBufferData(GL_ARRAY_BUFFER, lightObj->full_vertex_data.size()*sizeof(glm::vec3), lightObj->full_vertex_data.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+	glEnableVertexAttribArray(0);
+	glBindVertexArray(0);
 
 	reload_data();
 
