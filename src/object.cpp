@@ -1,5 +1,8 @@
 #include "object.h"
 
+#define COLOR
+#define DEBUG
+
 void Object::load_file(std::string fn)
 {
 	filename=fn;
@@ -47,7 +50,7 @@ void Object::load_file(std::string fn)
 				ss >> term;
 				vertex[i]=std::stof(term);
 			}
-			normal_data.push_back(vertex);
+			normal_data.push_back(-1.0f*vertex);
 		}
 
 		if (term == "f")
@@ -76,20 +79,44 @@ void Object::load_file(std::string fn)
 			{
 				if (normal_data.size() != 0)
 				{
-					full_color_data.push_back(normal_to_color(normal_data[normal_index_data[0]]));
-					full_color_data.push_back(normal_to_color(normal_data[normal_index_data.end()[-2]]));
-					full_color_data.push_back(normal_to_color(normal_data[normal_index_data.end()[-1]]));
+					#ifdef COLOR
+						full_color_data.push_back(normal_to_color(normal_data[normal_index_data[0]]));
+						full_color_data.push_back(normal_to_color(normal_data[normal_index_data.end()[-2]]));
+						full_color_data.push_back(normal_to_color(normal_data[normal_index_data.end()[-1]]));
+					#else
+						full_color_data.push_back(glm::vec3{1.0f});
+						full_color_data.push_back(glm::vec3{1.0f});
+						full_color_data.push_back(glm::vec3{1.0f});
+					#endif
+					
+					
 				}
 				else
 				{
-					full_color_data.push_back(normal_to_color(glm::normalize(vertex_data[index_data[0]])));
-					full_color_data.push_back(normal_to_color(glm::normalize(vertex_data[index_data.end()[-2]])));
-					full_color_data.push_back(normal_to_color(glm::normalize(vertex_data[index_data.end()[-1]])));
+					#ifdef COLOR
+						full_color_data.push_back(normal_to_color(glm::normalize(vertex_data[index_data[0]])));
+						full_color_data.push_back(normal_to_color(glm::normalize(vertex_data[index_data.end()[-2]])));
+						full_color_data.push_back(normal_to_color(glm::normalize(vertex_data[index_data.end()[-1]])));
+					#else
+						full_color_data.push_back(glm::vec3{1.0f});
+						full_color_data.push_back(glm::vec3{1.0f});
+						full_color_data.push_back(glm::vec3{1.0f});
+					#endif
 
 					// full_color_data.push_back(random_color());
 					// full_color_data.push_back(random_color());
 					// full_color_data.push_back(random_color());
 				}
+
+				glm::vec3 flat_normal{calculateSurfaceNormal(vertex_data[index_data[0]], vertex_data[index_data.end()[-2]], vertex_data[index_data.end()[-1]])};
+				full_flat_normal_data.push_back(flat_normal);
+				full_flat_normal_data.push_back(flat_normal);
+				full_flat_normal_data.push_back(flat_normal);
+				flat_normal_data.push_back(flat_normal);
+
+				full_normal_data.push_back(normal_data[normal_index_data[0]]);
+				full_normal_data.push_back(normal_data[normal_index_data.end()[-2]]);
+				full_normal_data.push_back(normal_data[normal_index_data.end()[-1]]);
 
 				full_index_data.push_back(index_data[0]);
 				full_index_data.push_back(index_data.end()[-2]);
@@ -105,8 +132,27 @@ void Object::load_file(std::string fn)
 
 	for (int i{}; i < vertex_data.size(); i++)
 	{
-		color_data.push_back(normal_to_color(glm::normalize(vertex_data[i])));
+		#ifdef COLOR
+			color_data.push_back(normal_to_color(glm::normalize(vertex_data[i])));
+		#else
+			color_data.push_back(glm::vec3{1.0f});
+		#endif
 	}
+
+	#ifdef DEBUG
+		for (int i{}; i < vertex_data.size(); i++)
+		{
+			std::cout << i << "\nPOSITION: ";
+			print_vec(vertex_data[i]);
+			// std::cout << "NORMAL: ";
+			// print_vec(flat_normal_data[i]);
+			std::cout << "NORMAL: ";
+			print_vec(normal_data[i]);
+			std::cout << "COLOR: ";
+			print_vec(color_data[i]);
+			std::cout << '\n';
+		}
+	#endif
 }
 
 Object::Object()
@@ -129,4 +175,12 @@ glm::vec3 Object::random_color()
 void Object::print_vec(glm::vec3 vec)
 {
 	std::cout << vec.x << ' ' << vec.y << ' ' << vec.z << '\n';
+}
+
+glm::vec3 Object::calculateSurfaceNormal(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3)
+{
+	glm::vec3 u{p2-p1};
+	glm::vec3 v{p3-p1};
+
+	return glm::normalize(glm::vec3{(u.y*v.z)-(u.z*v.y), (u.z*v.x)-(u.x*v.z), (u.x*v.y)-(u.y*v.x)});
 }

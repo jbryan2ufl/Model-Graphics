@@ -4,17 +4,30 @@
 
 void Application::reload_data()
 {
-	glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, m_positionVBO);
 	if (useEBO)
 	{
 		glBufferData(GL_ARRAY_BUFFER, obj->vertex_data.size()*sizeof(glm::vec3), obj->vertex_data.data(), GL_STATIC_DRAW);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
 		glEnableVertexAttribArray(0);
 
-		glBindBuffer(GL_ARRAY_BUFFER, m_ColorVBO);
-		glBufferData(GL_ARRAY_BUFFER, obj->color_data.size()*sizeof(glm::vec3), obj->color_data.data(), GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, m_normalVBO);
+		if (shaderSelection == 2)
+		{
+			// flat
+			glBufferData(GL_ARRAY_BUFFER, obj->flat_normal_data.size()*sizeof(glm::vec3), obj->flat_normal_data.data(), GL_STATIC_DRAW);
+		}
+		else
+		{
+			glBufferData(GL_ARRAY_BUFFER, obj->normal_data.size()*sizeof(glm::vec3), obj->normal_data.data(), GL_STATIC_DRAW);
+		}
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
 		glEnableVertexAttribArray(1);
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_colorVBO);
+		glBufferData(GL_ARRAY_BUFFER, obj->color_data.size()*sizeof(glm::vec3), obj->color_data.data(), GL_STATIC_DRAW);
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+		glEnableVertexAttribArray(2);
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, obj->full_index_data.size()*sizeof(unsigned int), obj->full_index_data.data(), GL_STATIC_DRAW);
@@ -25,10 +38,23 @@ void Application::reload_data()
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
 		glEnableVertexAttribArray(0);
 
-		glBindBuffer(GL_ARRAY_BUFFER, m_ColorVBO);
-		glBufferData(GL_ARRAY_BUFFER, obj->full_color_data.size()*sizeof(glm::vec3), obj->full_color_data.data(), GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, m_normalVBO);
+		if (shaderSelection == 2)
+		{
+			// flat
+			glBufferData(GL_ARRAY_BUFFER, obj->full_flat_normal_data.size()*sizeof(glm::vec3), obj->full_flat_normal_data.data(), GL_STATIC_DRAW);
+		}
+		else
+		{
+			glBufferData(GL_ARRAY_BUFFER, obj->full_normal_data.size()*sizeof(glm::vec3), obj->full_normal_data.data(), GL_STATIC_DRAW);
+		}
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
 		glEnableVertexAttribArray(1);
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_colorVBO);
+		glBufferData(GL_ARRAY_BUFFER, obj->full_color_data.size()*sizeof(glm::vec3), obj->full_color_data.data(), GL_STATIC_DRAW);
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+		glEnableVertexAttribArray(2);
 	}
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
 
@@ -46,7 +72,6 @@ void Application::draw()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
-	m_shader.use();
 	mvpMatrix=glm::mat4{1.0f};
 
 	view.t = camera.getViewMatrix();
@@ -57,16 +82,41 @@ void Application::draw()
 		mvpMatrix*=transformation->t;
 	}
 
+	modelMatrix = glm::mat4{1.0f};
+	modelMatrix *= translate.t * rotate.t * scale.t;
 
+	m_shader.use();
 	m_shader.setMat4("mvpMatrix", mvpMatrix);
+	m_shader.setMat4("modelMatrix", modelMatrix);
+	m_shader.setVec3("lightPos", lightPos);
+	m_shader.setVec3("lightColor", lightColor);
+	m_shader.setFloat("ambientStrength", ambientStrength);
+	m_shader.setFloat("diffuseStrength", diffuseStrength);
 
 	if (useEBO)
 	{
-		glDrawElements(GL_TRIANGLES, obj->full_index_data.size()*sizeof(unsigned int), GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, obj->full_index_data.size(), GL_UNSIGNED_INT, 0);
 	}
 	else
 	{
-		glDrawArrays(GL_TRIANGLES, 0, obj->full_vertex_data.size()*sizeof(glm::vec3));
+		glDrawArrays(GL_TRIANGLES, 0, obj->full_vertex_data.size());
+	}
+
+	if (showNormals)
+	{
+		m_normalShader.use();
+		m_normalShader.setMat4("mvpMatrix", mvpMatrix);
+		m_normalShader.setMat4("modelMatrix", modelMatrix);
+		m_normalShader.setMat4("viewMatrix", view.t);
+		m_normalShader.setMat4("projectionMatrix", projection.t);
+		if (useEBO)
+		{
+			glDrawElements(GL_TRIANGLES, obj->full_index_data.size(), GL_UNSIGNED_INT, 0);
+		}
+		else
+		{
+			glDrawArrays(GL_TRIANGLES, 0, obj->full_vertex_data.size());
+		}
 	}
 
 	ImGui_ImplOpenGL3_NewFrame();
@@ -78,6 +128,33 @@ void Application::draw()
 	ImGui::SetNextWindowSize(ImVec2{m_SCR_WIDTH*(1-m_viewport_ratio),m_SCR_HEIGHT});
 	if (ImGui::Begin("Settings", 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration))
 	{
+
+		if (ImGui::RadioButton("Gouraud", &shaderSelection, 0))
+		{
+			reload_data();
+			m_shader.setupShader("src/gouraud_source.vs", m_shader.vertex, GL_VERTEX_SHADER);
+			m_shader.setupShader("src/gouraud_source.fs", m_shader.fragment, GL_FRAGMENT_SHADER);
+		}
+		if (ImGui::RadioButton("Phong", &shaderSelection, 1))
+		{
+			reload_data();
+			m_shader.setupShader("src/phong_source.vs", m_shader.vertex, GL_VERTEX_SHADER);
+			m_shader.setupShader("src/phong_source.fs", m_shader.fragment, GL_FRAGMENT_SHADER);
+		}
+		if (ImGui::RadioButton("Flat", &shaderSelection, 2))
+		{
+			reload_data();
+			m_shader.setupShader("src/flat_source.vs", m_shader.vertex, GL_VERTEX_SHADER);
+			m_shader.setupShader("src/flat_source.fs", m_shader.fragment, GL_FRAGMENT_SHADER);
+		}
+
+		ImGui::SliderFloat("Diffuse Strengh", &diffuseStrength, 0.0f, 1.0f);
+		ImGui::SliderFloat("Ambient Strengh", &ambientStrength, 0.0f, 1.0f);
+		ImGui::DragFloat3("Light Position", &lightPos[0], 0.1f);
+		ImGui::SliderFloat3("Light Color", &lightColor[0], 0.0f, 1.0f);
+
+		if (ImGui::Checkbox("Show Normals", &showNormals));
+
 		if (ImGui::Checkbox("Wireframe Mode", &wireframe))
 		{
 			if (wireframe)
@@ -99,14 +176,14 @@ void Application::draw()
 		}
 		if (ImGui::Checkbox("Depth Visualization", &depthVisualization))
 		{
-			if (depthVisualization)
-			{
-				m_shader.updateFragmentShader("src/depth_source.fs");
-			}
-			else
-			{
-				m_shader.updateFragmentShader("src/source.fs");
-			}
+			// if (depthVisualization)
+			// {
+			// 	m_shader.updateFragmentShader("src/depth_source.fs");
+			// }
+			// else
+			// {
+			// 	m_shader.updateFragmentShader("src/source.fs");
+			// }
 			m_shader.setFloat("near", m_nearPlane);
 			m_shader.setFloat("far", m_farPlane);
 		}
@@ -222,8 +299,8 @@ void Application::init()
 
 	glEnable(GL_DEPTH_TEST);
 	glfwSwapInterval(vsync);
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
+	// glEnable(GL_CULL_FACE);
+	// glCullFace(GL_BACK);
 
 
 	// imgui configuration
@@ -239,10 +316,12 @@ void Application::init()
 	// start glew
 	glewInit();
 
-	m_shader = Shader("src/source.vs", "src/source.fs");
+	m_shader = Shader("src/gouraud_source.vs", "src/gouraud_source.fs");
+	m_normalShader = Shader("src/normal_source.vs", "src/normal_source.fs", "src/normal_source.gs");
 
-	glGenBuffers(1, &m_ColorVBO);
-	glGenBuffers(1, &m_VBO);
+	glGenBuffers(1, &m_positionVBO);
+	glGenBuffers(1, &m_normalVBO);
+	glGenBuffers(1, &m_colorVBO);
 	glGenBuffers(1, &m_EBO);
 	glGenVertexArrays(1, &m_VAO);
 	glBindVertexArray(m_VAO);
@@ -357,22 +436,22 @@ void Application::process_input()
 	{
 		camera.processKeyboardMovement(KeyboardMovement::DOWN, m_deltaTime);
 	}
-	// if (glfwGetKey(m_window, GLFW_KEY_LEFT) == GLFW_PRESS)
-	// {
-	// 	translate.t = glm::translate(translate.t, glm::vec3{-0.01f, 0.0f, 0.0f});
-	// }
-	// if (glfwGetKey(m_window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-	// {
-	// 	translate.t = glm::translate(translate.t, glm::vec3{0.01f, 0.0f, 0.0f});
-	// }
-	// if (glfwGetKey(m_window, GLFW_KEY_UP) == GLFW_PRESS)
-	// {
-	// 	translate.t = glm::translate(translate.t, glm::vec3{0.0f, 0.01f, 0.0f});
-	// }
-	// if (glfwGetKey(m_window, GLFW_KEY_DOWN) == GLFW_PRESS)
-	// {
-	// 	translate.t = glm::translate(translate.t, glm::vec3{0.0f, -0.01f, 0.0f});
-	// }
+	if (glfwGetKey(m_window, GLFW_KEY_LEFT) == GLFW_PRESS)
+	{
+		translate.t = glm::translate(translate.t, glm::vec3{-0.01f, 0.0f, 0.0f});
+	}
+	if (glfwGetKey(m_window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+	{
+		translate.t = glm::translate(translate.t, glm::vec3{0.01f, 0.0f, 0.0f});
+	}
+	if (glfwGetKey(m_window, GLFW_KEY_UP) == GLFW_PRESS)
+	{
+		translate.t = glm::translate(translate.t, glm::vec3{0.0f, 0.01f, 0.0f});
+	}
+	if (glfwGetKey(m_window, GLFW_KEY_DOWN) == GLFW_PRESS)
+	{
+		translate.t = glm::translate(translate.t, glm::vec3{0.0f, -0.01f, 0.0f});
+	}
 
 	if (glfwGetKey(m_window, GLFW_KEY_U) == GLFW_PRESS)
 	{

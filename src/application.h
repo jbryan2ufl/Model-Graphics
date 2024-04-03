@@ -73,7 +73,8 @@ private:
 
 	GLFWwindow* m_window{};
 
-	Shader m_shader{};
+	Shader m_shader;
+	Shader m_normalShader;
 
 	// MVP matrix
 	Transformation scale{"Scale", glm::mat4{1.0f}};
@@ -83,13 +84,15 @@ private:
 	Transformation projection{"Projection", glm::mat4{1.0f}};
 	std::vector<Transformation*> mvpMatrixComponents{};
 	glm::mat4 mvpMatrix{};
+	glm::mat4 modelMatrix{};
 
 	std::vector<std::string> obj_names{};
 
 	unsigned int m_VAO;
-	unsigned int m_ColorVBO;
-	unsigned int m_VBO;
+	unsigned int m_colorVBO;
+	unsigned int m_positionVBO;
 	unsigned int m_EBO;
+	unsigned int m_normalVBO;
 
 
 	bool mouseFocus{};
@@ -104,8 +107,16 @@ private:
 	bool vsync{true};
 	bool wireframe{false};
 	bool useEBO{false};
+	bool showNormals{true};
+
+	int shaderSelection{0};
 
 	Object* obj;
+
+	float ambientStrength{0.0f};
+	float diffuseStrength{1.0f};
+	glm::vec3 lightPos{0.0f, 5.0f, 0.0f};
+	glm::vec3 lightColor{1.0f, 1.0f, 1.0f};
 
 	void draw();
 
