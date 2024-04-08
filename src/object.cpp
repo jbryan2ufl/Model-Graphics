@@ -1,6 +1,6 @@
 #include "object.h"
 
-// #define COLOR
+#define COLOR
 // #define DEBUG
 
 void Object::load_file(std::string fn)

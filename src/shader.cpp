@@ -3,6 +3,7 @@
 // code from https://learnopengl.com/Getting-started/Shaders
 
 Shader::Shader(const char* vertexPath, const char* fragmentPath)
+	: currentVertexPath{vertexPath}
 {
 	ID=glCreateProgram();
 	setupShader(vertexPath, vertex, GL_VERTEX_SHADER);
@@ -10,6 +11,7 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
 }
 
 Shader::Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath)
+	: currentVertexPath{vertexPath}
 {
 	ID=glCreateProgram();
 	setupShader(vertexPath, vertex, GL_VERTEX_SHADER);
@@ -19,6 +21,12 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath, const char* geo
 
 void Shader::setupShader(const char* shaderPath, unsigned int& shaderID, GLenum shaderType)
 {
+	if (shaderType == GL_VERTEX_SHADER)
+	{
+		previousVertexPath = currentVertexPath;
+		currentVertexPath = shaderPath; 
+	}
+
 	std::string shaderCodeString;
 	std::ifstream shaderFile;
 	shaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
@@ -50,6 +58,11 @@ void Shader::setupShader(const char* shaderPath, unsigned int& shaderID, GLenum 
 	glDeleteShader(shaderID);
 	glLinkProgram(ID);
 	checkCompileErrors(ID, "PROGRAM");
+}
+
+void Shader::resetVertexShader()
+{
+	setupShader(previousVertexPath.c_str(), vertex, GL_VERTEX_SHADER);
 }
 
 void Shader::checkCompileErrors(unsigned int shader, std::string type)

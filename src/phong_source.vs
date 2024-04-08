@@ -9,7 +9,7 @@ uniform mat4 modelMatrix;
 
 out vec3 color;
 out vec3 normal;
-out vec3 position;
+out vec3 fragPos;
 
 void main()
 {
@@ -17,7 +17,7 @@ void main()
 	vec3 fragPos = vec3(modelMatrix * vec4(aPos, 1.0));
 
 	
-	position = fragPos;
+	// position = fragPos;
 	normal = mat3(transpose(inverse(modelMatrix))) * aNormal;
 	color=aColor;
 }

@@ -74,7 +74,6 @@ private:
 	GLFWwindow* m_window{};
 
 	Shader m_shader;
-	Shader m_normalShader;
 	Shader m_lightShader;
 
 	// MVP matrix
@@ -111,7 +110,6 @@ private:
 	bool vsync{true};
 	bool wireframe{false};
 	bool useEBO{false};
-	bool showNormals{false};
 
 	int shaderSelection{0};
 
@@ -120,6 +118,8 @@ private:
 
 	float ambientStrength{0.0f};
 	float diffuseStrength{1.0f};
+	float specularStrength{1.0f};
+	float shininess{1.0f};
 	glm::vec3 lightPos{0.0f, 5.0f, 0.0f};
 	glm::vec3 lightColor{1.0f, 1.0f, 1.0f};
 

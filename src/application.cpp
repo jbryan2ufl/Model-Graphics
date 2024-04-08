@@ -99,6 +99,11 @@ void Application::draw()
 	m_shader.setVec3("lightColor", lightColor);
 	m_shader.setFloat("ambientStrength", ambientStrength);
 	m_shader.setFloat("diffuseStrength", diffuseStrength);
+	m_shader.setFloat("specularStrength", specularStrength);
+	m_shader.setFloat("shininess", shininess);
+	m_shader.setVec3("viewPos", camera.m_position);
+	m_shader.setFloat("near", m_nearPlane);
+	m_shader.setFloat("far", m_farPlane);
 
 	if (useEBO)
 	{
@@ -109,28 +114,12 @@ void Application::draw()
 		glDrawArrays(GL_TRIANGLES, 0, obj->full_vertex_data.size());
 	}
 
-	if (showNormals)
-	{
-		m_normalShader.use();
-		m_normalShader.setMat4("mvpMatrix", mvpMatrix);
-		m_normalShader.setMat4("modelMatrix", modelMatrix);
-		m_normalShader.setMat4("viewMatrix", view.t);
-		m_normalShader.setMat4("projectionMatrix", projection.t);
-		if (useEBO)
-		{
-			glDrawElements(GL_TRIANGLES, obj->full_index_data.size(), GL_UNSIGNED_INT, 0);
-		}
-		else
-		{
-			glDrawArrays(GL_TRIANGLES, 0, obj->full_vertex_data.size());
-		}
-	}
-
 	glBindVertexArray(m_lightVAO);
 	m_lightShader.use();
 	m_lightShader.setMat4("vpMatrix", projection.t * view.t);
 	m_lightShader.setVec3("lightPos", lightPos);
 	glDrawArrays(GL_TRIANGLES, 0, lightObj->full_vertex_data.size());
+
 	glBindVertexArray(0);
 
 
@@ -162,13 +151,19 @@ void Application::draw()
 			m_shader.setupShader("src/flat_source.vs", m_shader.vertex, GL_VERTEX_SHADER);
 			m_shader.setupShader("src/flat_source.fs", m_shader.fragment, GL_FRAGMENT_SHADER);
 		}
+		if (ImGui::RadioButton("Depth", &shaderSelection, 3))
+		{
+			reload_data();
+			m_shader.setupShader("src/depth_source.vs", m_shader.vertex, GL_VERTEX_SHADER);
+			m_shader.setupShader("src/depth_source.fs", m_shader.fragment, GL_FRAGMENT_SHADER);
+		}
 
-		ImGui::SliderFloat("Diffuse Strengh", &diffuseStrength, 0.0f, 1.0f);
 		ImGui::SliderFloat("Ambient Strengh", &ambientStrength, 0.0f, 1.0f);
+		ImGui::SliderFloat("Diffuse Strengh", &diffuseStrength, 0.0f, 1.0f);
+		ImGui::SliderFloat("Specular Strengh", &specularStrength, 0.0f, 1.0f);
+		ImGui::SliderFloat("Shininess", &shininess, 0.0f, 64.0f);
 		ImGui::DragFloat3("Light Position", &lightPos[0], 0.1f);
 		ImGui::SliderFloat3("Light Color", &lightColor[0], 0.0f, 1.0f);
-
-		if (ImGui::Checkbox("Show Normals", &showNormals));
 
 		if (ImGui::Checkbox("Wireframe Mode", &wireframe))
 		{
@@ -188,19 +183,6 @@ void Application::draw()
 		if (ImGui::Checkbox("EBO", &useEBO))
 		{
 			reload_data();
-		}
-		if (ImGui::Checkbox("Depth Visualization", &depthVisualization))
-		{
-			// if (depthVisualization)
-			// {
-			// 	m_shader.updateFragmentShader("src/depth_source.fs");
-			// }
-			// else
-			// {
-			// 	m_shader.updateFragmentShader("src/source.fs");
-			// }
-			m_shader.setFloat("near", m_nearPlane);
-			m_shader.setFloat("far", m_farPlane);
 		}
 
 
@@ -314,8 +296,8 @@ void Application::init()
 
 	glEnable(GL_DEPTH_TEST);
 	glfwSwapInterval(vsync);
-	// glEnable(GL_CULL_FACE);
-	// glCullFace(GL_BACK);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 
 
 	// imgui configuration
@@ -332,7 +314,6 @@ void Application::init()
 	glewInit();
 
 	m_shader = Shader("src/gouraud_source.vs", "src/gouraud_source.fs");
-	m_normalShader = Shader("src/normal_source.vs", "src/normal_source.fs", "src/normal_source.gs");
 	m_lightShader = Shader{"src/light_source.vs", "src/light_source.fs"};
 
 	glGenBuffers(1, &m_positionVBO);
