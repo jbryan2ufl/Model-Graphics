@@ -58,7 +58,7 @@ public:
 
 private:
 	// settings
-	int m_SCR_WIDTH{1440};
+	int m_SCR_WIDTH{1920};
 	int m_SCR_HEIGHT{1080};
 	const float m_viewport_ratio{m_SCR_HEIGHT/static_cast<float>(m_SCR_WIDTH)};
 	int m_VIEW_WIDTH{m_SCR_WIDTH*m_viewport_ratio};
@@ -91,7 +91,6 @@ private:
 	unsigned int m_VAO;
 	unsigned int m_colorVBO;
 	unsigned int m_positionVBO;
-	unsigned int m_EBO;
 	unsigned int m_normalVBO;
 
 	unsigned int m_lightVAO;
@@ -109,7 +108,6 @@ private:
 	bool depthVisualization{false};
 	bool vsync{true};
 	bool wireframe{false};
-	bool useEBO{false};
 
 	int shaderSelection{0};
 

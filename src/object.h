@@ -31,6 +31,8 @@ public:
 	std::vector<glm::vec3> flat_normal_data{};
 	std::vector<glm::vec3> full_flat_normal_data{};
 
+	bool noNormals{false};
+
 	glm::vec3 normal_to_color(glm::vec3);
 	void print_vec(glm::vec3);
 

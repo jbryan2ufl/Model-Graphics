@@ -18,16 +18,13 @@ uniform float specularStrength;
 uniform float shininess;
 
 out vec3 color;
-out vec3 normal;
-out vec3 position;
 
 void main()
 {
 	gl_Position = mvpMatrix * vec4(aPos, 1.0);
 	vec3 fragPos = vec3(modelMatrix * vec4(aPos, 1.0));
 	
-	position = fragPos;
-	normal = mat3(transpose(inverse(modelMatrix))) * aNormal;
+	vec3 normal = mat3(transpose(inverse(modelMatrix))) * aNormal;
 
 	vec3 norm = normalize(normal);
 

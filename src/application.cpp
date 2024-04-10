@@ -6,63 +6,32 @@ void Application::reload_data()
 {
 	glBindVertexArray(m_VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, m_positionVBO);
-	if (useEBO)
+	glBufferData(GL_ARRAY_BUFFER, obj->full_vertex_data.size()*sizeof(glm::vec3), obj->full_vertex_data.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, m_normalVBO);
+	if (shaderSelection == 2)
 	{
-		glBufferData(GL_ARRAY_BUFFER, obj->vertex_data.size()*sizeof(glm::vec3), obj->vertex_data.data(), GL_STATIC_DRAW);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
-		glEnableVertexAttribArray(0);
-
-		glBindBuffer(GL_ARRAY_BUFFER, m_normalVBO);
-		if (shaderSelection == 2)
-		{
-			// flat
-			glBufferData(GL_ARRAY_BUFFER, obj->flat_normal_data.size()*sizeof(glm::vec3), obj->flat_normal_data.data(), GL_STATIC_DRAW);
-		}
-		else
-		{
-			glBufferData(GL_ARRAY_BUFFER, obj->normal_data.size()*sizeof(glm::vec3), obj->normal_data.data(), GL_STATIC_DRAW);
-		}
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
-		glEnableVertexAttribArray(1);
-
-		glBindBuffer(GL_ARRAY_BUFFER, m_colorVBO);
-		glBufferData(GL_ARRAY_BUFFER, obj->color_data.size()*sizeof(glm::vec3), obj->color_data.data(), GL_STATIC_DRAW);
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
-		glEnableVertexAttribArray(2);
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, obj->full_index_data.size()*sizeof(unsigned int), obj->full_index_data.data(), GL_STATIC_DRAW);
+		// flat
+		glBufferData(GL_ARRAY_BUFFER, obj->full_flat_normal_data.size()*sizeof(glm::vec3), obj->full_flat_normal_data.data(), GL_STATIC_DRAW);
 	}
 	else
 	{
-		glBufferData(GL_ARRAY_BUFFER, obj->full_vertex_data.size()*sizeof(glm::vec3), obj->full_vertex_data.data(), GL_STATIC_DRAW);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
-		glEnableVertexAttribArray(0);
-
-		glBindBuffer(GL_ARRAY_BUFFER, m_normalVBO);
-		if (shaderSelection == 2)
-		{
-			// flat
-			glBufferData(GL_ARRAY_BUFFER, obj->full_flat_normal_data.size()*sizeof(glm::vec3), obj->full_flat_normal_data.data(), GL_STATIC_DRAW);
-		}
-		else
-		{
-			glBufferData(GL_ARRAY_BUFFER, obj->full_normal_data.size()*sizeof(glm::vec3), obj->full_normal_data.data(), GL_STATIC_DRAW);
-		}
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
-		glEnableVertexAttribArray(1);
-
-		glBindBuffer(GL_ARRAY_BUFFER, m_colorVBO);
-		glBufferData(GL_ARRAY_BUFFER, obj->full_color_data.size()*sizeof(glm::vec3), obj->full_color_data.data(), GL_STATIC_DRAW);
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
-		glEnableVertexAttribArray(2);
-
-		std::cout << "\nVERTEX SIZE: " << obj->full_vertex_data.size()*sizeof(glm::vec3) << '\n';
-		std::cout << "FLAT NORMAL SIZE: " << obj->full_flat_normal_data.size()*sizeof(glm::vec3) << '\n';
-		std::cout << "NORMAL SIZE: " << obj->full_normal_data.size()*sizeof(glm::vec3) << '\n';
-		std::cout << "COLOR SIZE: " << obj->full_color_data.size()*sizeof(glm::vec3) << '\n';
+		glBufferData(GL_ARRAY_BUFFER, obj->full_normal_data.size()*sizeof(glm::vec3), obj->full_normal_data.data(), GL_STATIC_DRAW);
 	}
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+	glEnableVertexAttribArray(1);
+
+	glBindBuffer(GL_ARRAY_BUFFER, m_colorVBO);
+	glBufferData(GL_ARRAY_BUFFER, obj->full_color_data.size()*sizeof(glm::vec3), obj->full_color_data.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+	glEnableVertexAttribArray(2);
+
+	std::cout << "\nVERTEX SIZE: " << obj->full_vertex_data.size()*sizeof(glm::vec3) << '\n';
+	std::cout << "FLAT NORMAL SIZE: " << obj->full_flat_normal_data.size()*sizeof(glm::vec3) << '\n';
+	std::cout << "NORMAL SIZE: " << obj->full_normal_data.size()*sizeof(glm::vec3) << '\n';
+	std::cout << "COLOR SIZE: " << obj->full_color_data.size()*sizeof(glm::vec3) << '\n';
 	glBindVertexArray(0);
 }
 
@@ -105,14 +74,7 @@ void Application::draw()
 	m_shader.setFloat("near", m_nearPlane);
 	m_shader.setFloat("far", m_farPlane);
 
-	if (useEBO)
-	{
-		glDrawElements(GL_TRIANGLES, obj->full_index_data.size(), GL_UNSIGNED_INT, 0);
-	}
-	else
-	{
-		glDrawArrays(GL_TRIANGLES, 0, obj->full_vertex_data.size());
-	}
+	glDrawArrays(GL_TRIANGLES, 0, obj->full_vertex_data.size());
 
 	glBindVertexArray(m_lightVAO);
 	m_lightShader.use();
@@ -148,8 +110,8 @@ void Application::draw()
 		if (ImGui::RadioButton("Flat", &shaderSelection, 2))
 		{
 			reload_data();
-			m_shader.setupShader("src/flat_source.vs", m_shader.vertex, GL_VERTEX_SHADER);
-			m_shader.setupShader("src/flat_source.fs", m_shader.fragment, GL_FRAGMENT_SHADER);
+			m_shader.setupShader("src/gouraud_source.vs", m_shader.vertex, GL_VERTEX_SHADER);
+			m_shader.setupShader("src/gouraud_source.fs", m_shader.fragment, GL_FRAGMENT_SHADER);
 		}
 		if (ImGui::RadioButton("Depth", &shaderSelection, 3))
 		{
@@ -179,10 +141,6 @@ void Application::draw()
 		if (ImGui::Checkbox("Cap FPS", &vsync))
 		{
 			glfwSwapInterval(vsync);
-		}
-		if (ImGui::Checkbox("EBO", &useEBO))
-		{
-			reload_data();
 		}
 
 
@@ -272,7 +230,7 @@ void Application::init()
 	glfwWindowHint(GLFW_SAMPLES, 4);
 
 	// glfw window creation
-	m_window = glfwCreateWindow(m_SCR_WIDTH, m_SCR_HEIGHT, "Model Transformations", NULL, NULL);
+	m_window = glfwCreateWindow(m_SCR_WIDTH, m_SCR_HEIGHT, "Graphics", NULL, NULL);
 
 	// check if window is created
 	if (m_window == NULL)
@@ -319,10 +277,9 @@ void Application::init()
 	glGenBuffers(1, &m_positionVBO);
 	glGenBuffers(1, &m_normalVBO);
 	glGenBuffers(1, &m_colorVBO);
-	glGenBuffers(1, &m_EBO);
 	glGenVertexArrays(1, &m_VAO);
 
-	obj = new Object();
+	obj = new Object("cow.obj");
 	lightObj = new Object();
 
 	glGenBuffers(1, &m_lightVBO);
@@ -344,7 +301,6 @@ void Application::init()
 	mvpMatrixComponents.push_back(&translate);
 	mvpMatrixComponents.push_back(&rotate);
 	mvpMatrixComponents.push_back(&scale);
-
 }
 
 

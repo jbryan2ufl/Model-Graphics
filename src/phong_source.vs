@@ -16,8 +16,6 @@ void main()
 	gl_Position = mvpMatrix * vec4(aPos, 1.0);
 	vec3 fragPos = vec3(modelMatrix * vec4(aPos, 1.0));
 
-	
-	// position = fragPos;
 	normal = mat3(transpose(inverse(modelMatrix))) * aNormal;
 	color=aColor;
 }

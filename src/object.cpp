@@ -57,6 +57,10 @@ void Object::load_file(std::string fn)
 
 		if (term == "f")
 		{
+			if (normal_data.size() == 0)
+			{
+				noNormals = true;
+			}
 
 			std::vector<unsigned int> face_vertices{};
 			unsigned int temp{};
@@ -90,8 +94,6 @@ void Object::load_file(std::string fn)
 						full_color_data.push_back(glm::vec3{1.0f});
 						full_color_data.push_back(glm::vec3{1.0f});
 					#endif
-					
-					
 				}
 				else
 				{
@@ -105,9 +107,6 @@ void Object::load_file(std::string fn)
 						full_color_data.push_back(glm::vec3{1.0f});
 					#endif
 
-					// full_color_data.push_back(random_color());
-					// full_color_data.push_back(random_color());
-					// full_color_data.push_back(random_color());
 				}
 
 				glm::vec3 flat_normal{calculateSurfaceNormal(vertex_data[index_data[0]], vertex_data[index_data.end()[-2]], vertex_data[index_data.end()[-1]])};
@@ -116,9 +115,18 @@ void Object::load_file(std::string fn)
 				full_flat_normal_data.push_back(flat_normal);
 				flat_normal_data.push_back(flat_normal);
 
-				full_normal_data.push_back(normal_data[normal_index_data[0]]);
-				full_normal_data.push_back(normal_data[normal_index_data.end()[-2]]);
-				full_normal_data.push_back(normal_data[normal_index_data.end()[-1]]);
+				if (noNormals)
+				{
+					full_normal_data.push_back(flat_normal);
+					full_normal_data.push_back(flat_normal);
+					full_normal_data.push_back(flat_normal);
+				}
+				else
+				{
+					full_normal_data.push_back(normal_data[normal_index_data[0]]);
+					full_normal_data.push_back(normal_data[normal_index_data.end()[-2]]);
+					full_normal_data.push_back(normal_data[normal_index_data.end()[-1]]);
+				}
 
 				full_index_data.push_back(index_data[0]);
 				full_index_data.push_back(index_data.end()[-2]);
@@ -132,14 +140,14 @@ void Object::load_file(std::string fn)
 		}
 	}
 
-	for (int i{}; i < vertex_data.size(); i++)
-	{
-		#ifdef COLOR
-			color_data.push_back(normal_to_color(glm::normalize(vertex_data[i])));
-		#else
-			color_data.push_back(glm::vec3{1.0f});
-		#endif
-	}
+	// for (int i{}; i < vertex_data.size(); i++)
+	// {
+	// 	#ifdef COLOR
+	// 		color_data.push_back(normal_to_color(glm::normalize(vertex_data[i])));
+	// 	#else
+	// 		color_data.push_back(glm::vec3{1.0f});
+	// 	#endif
+	// }
 
 	#ifdef DEBUG
 		for (int i{}; i < vertex_data.size(); i++)
@@ -184,5 +192,6 @@ glm::vec3 Object::calculateSurfaceNormal(glm::vec3 p1, glm::vec3 p2, glm::vec3 p
 	glm::vec3 u{p2-p1};
 	glm::vec3 v{p3-p1};
 
-	return glm::normalize(glm::vec3{(u.y*v.z)-(u.z*v.y), (u.z*v.x)-(u.x*v.z), (u.x*v.y)-(u.y*v.x)});
+	// return glm::normalize(glm::vec3{(u.y*v.z)-(u.z*v.y), (u.z*v.x)-(u.x*v.z), (u.x*v.y)-(u.y*v.x)});
+	return glm::normalize(glm::cross(u,v));
 }
